@@ -21,7 +21,7 @@ from pathlib import Path
 
 from .config import read_json, read_jsonl, sha256_file
 
-TOLERANCE = {"gain_points": 3.0, "crossing_rate": 0.10}
+TOLERANCE = {"gain_points": 3.0, "crossing_rate": 0.10, "share": 0.10, "bits": 2.0}
 
 
 def _summary(path: Path) -> dict:
@@ -90,7 +90,10 @@ def compare(expected: str, actual: str) -> int:
             if not ok:
                 line("FAIL", f"{key}: expected {ve}, got {va}")
             continue
-        tol = TOLERANCE["crossing_rate"] if "rate" in key[3] else TOLERANCE["gain_points"]
+        q = key[3]
+        tol = (TOLERANCE["share"] if ("share" in q or "recall" in q) else
+               TOLERANCE["crossing_rate"] if "rate" in q else
+               TOLERANCE["bits"] if "bits" in q else TOLERANCE["gain_points"])
         d = abs(ve - va)
         worst = max(worst, d / tol)
         if d > tol:

@@ -26,7 +26,18 @@ from .config import (
 )
 from .filters import apply_filter, protected_terms
 from .generation import CachedGenerator
-from .metrics import per_label_auroc, person_accuracy
+from .metrics import (
+    bits_gained,
+    bootstrap_mean_ci,
+    cumulative_disclosure,
+    disclosable,
+    disclosed,
+    first_disclosure_turns,
+    per_label_auroc,
+    person_accuracy,
+    ratio_summary,
+    share_summary,
+)
 from .profiles import label_ids, load_population, render_profile
 from .questions import questions_for
 from .twin import twin_messages
@@ -191,8 +202,13 @@ def build_tasks(target: list[dict], rd: Path, T: int, donors: dict) -> list[dict
     return tasks
 
 
-def score_tasks(cfg: dict, tasks: list[dict], rd: Path, models: dict) -> tuple[dict, dict]:
-    """Probabilities for every task from every enabled auditor. Returns (probs, auditor_info)."""
+def score_tasks(cfg: dict, tasks: list[dict], rd: Path, models: dict,
+                cached_only: bool = False) -> tuple[dict, dict]:
+    """Probabilities for every task from every enabled auditor. Returns (probs, auditor_info).
+
+    cached_only: every LLM-auditor score must already be in the run's cache (used by `rescore`,
+    which must never run a model).
+    """
     baseline = BaselineAuditor(read_json(rd / "models" / "baseline.json"))
     lex = {s: LexicalModel(read_json(rd / "models" / f"lexical_{s}.json"))
            for s in [*SETTINGS, "full_record"]}
@@ -211,6 +227,13 @@ def score_tasks(cfg: dict, tasks: list[dict], rd: Path, models: dict) -> tuple[d
     acfg = cfg["auditors"]["llm"]
     if acfg.get("enabled"):
         aud = make_llm_auditor(acfg, cfg["labels"], baseline, rd / "cache" / "llm_auditor.jsonl")
+        if cached_only:
+            if not isinstance(aud, YesNoAuditor):
+                raise NotImplementedError("rescore supports the yes_no LLM-auditor method only")
+            missing = sum(aud.key(r) not in aud.cache for r in recs)
+            if missing:
+                raise RuntimeError(f"{missing} LLM-auditor scores are not in the run's cache; "
+                                   "rescore never runs a model")
         p, details = aud.predict(recs, return_details=True)
         probs["llm"] = p
         for t, d in zip(tasks, details, strict=True):
@@ -239,8 +262,12 @@ def collect(cfg: dict, target: list[dict], tasks: list[dict], probs: dict, T: in
     for i in base_rows:
         base_p[pidx[tasks[i]["pid"]]] = probs["baseline"][i]
     base_acc = person_accuracy(base_p, y, thr)
+    dc = cfg["disclosure"]
+    amin, bmax, clip = dc["auditor_min"], dc["baseline_max"], dc["bits_clip"]
     res["baseline"] = {"probs": base_p, "acc": base_acc, "headroom": 100.0 - base_acc,
-                       "auroc": per_label_auroc(base_p, y, L)}
+                       "auroc": per_label_auroc(base_p, y, L),
+                       "disclosable": disclosable(base_p, y, bmax)}
+    bb, yb = base_p[:, None, :], y[:, None, :]
     for a in probs:
         if a == "baseline":
             continue
@@ -256,21 +283,26 @@ def collect(cfg: dict, target: list[dict], tasks: list[dict], probs: dict, T: in
                 elif t["condition"] == "wrong_person":
                     wrong[pidx[t["pid"]]] = probs[a][i]
             acc = np.stack([person_accuracy(main[:, t], y, thr) for t in range(T + 1)], axis=1)
+            flags = disclosed(main, bb, yb, amin, bmax)
             out[s] = {"probs": main, "acc": acc, "gain": acc - base_acc[:, None],
                       "wrong_probs": wrong,
                       "wrong_gain": person_accuracy(wrong, y, thr) - base_acc,
-                      "auroc_final": per_label_auroc(main[:, T], y, L)}
+                      "auroc_final": per_label_auroc(main[:, T], y, L),
+                      "disc_flags": flags,
+                      "disc_first": first_disclosure_turns(flags),
+                      "disc_cum": cumulative_disclosure(flags),
+                      "disc_wrong": disclosed(wrong, base_p, y, amin, bmax),
+                      "bits": bits_gained(main, bb, yb, clip).sum(axis=2)}
         full = np.zeros((n, nl))
         for i in base_rows:
             full[pidx[tasks[i]["pid"]]] = probs[a][i]
-        out["full_record"] = {"probs": full, "gain": person_accuracy(full, y, thr) - base_acc}
+        out["full_record"] = {"probs": full, "gain": person_accuracy(full, y, thr) - base_acc,
+                              "disc": disclosed(full, base_p, y, amin, bmax)}
         res["auditors"][a] = out
     return res
 
 
 def evaluate_controls(cfg: dict, res: dict) -> list[dict]:
-    from .metrics import bootstrap_mean_ci
-
     c, b = cfg["controls"], cfg["metrics"]["bootstrap"]
     head = float(res["baseline"]["headroom"].mean())
     rows = []
@@ -294,6 +326,73 @@ def evaluate_controls(cfg: dict, res: dict) -> list[dict]:
                                   f"headroom ({need:.1f})",
                      "pass": bool(m >= need)})
     return rows
+
+
+def _ge(x: float, bound: float) -> bool:
+    return x >= bound - 1e-12
+
+
+def _lt(x: float, bound: float) -> bool:
+    return x < bound - 1e-12
+
+
+def evaluate_disclosure(cfg: dict, res: dict) -> dict:
+    """The application's decision rule, its controls and the verdict.
+
+    Returns {"controls": [...], "auditors": {...}, "verdict": ..., ...}. The rule is evaluated on
+    the filtered transcripts; see docs/decisions.md for every choice the application leaves open.
+    """
+    dc, b = cfg["disclosure"], cfg["metrics"]["bootstrap"]
+    rs, sd = b["resamples"], b["seed"]
+    T = cfg["questions"]["per_person"]
+    able = res["baseline"]["disclosable"]
+    controls, auditors = [], {}
+    for a, out in res["auditors"].items():
+        main, wp = {}, {}
+        for s in SETTINGS:
+            main[s] = share_summary(out[s]["disc_cum"][:, -1], rs, sd)
+            e = share_summary(out[s]["disc_flags"][:, 0, :].any(axis=1), rs, sd)
+            controls.append({"control": "empty_transcript", "auditor": a, "setting": s, **e,
+                             "criterion": f"share of people flagged < {dc['empty_max_share']:.0%}",
+                             "pass": _lt(e["value"], dc["empty_max_share"])})
+            wp[s] = share_summary(out[s]["disc_wrong"].any(axis=1), rs, sd)
+            controls.append({"control": "wrong_person", "auditor": a, "setting": s, **wp[s],
+                             "criterion": f"share of people flagged < {dc['wrong_person_max_share']:.0%}",
+                             "pass": _lt(wp[s]["value"], dc["wrong_person_max_share"])})
+        fr = ratio_summary(out["full_record"]["disc"].sum(axis=1), able.sum(axis=1), rs, sd)
+        controls.append({"control": "full_record", "auditor": a, "setting": "full_record", **fr,
+                         "criterion": f"share of disclosable (person, attribute) pairs flagged >= "
+                                      f"{dc['full_record_min_recall']:.0%}",
+                         "pass": fr["value"] is not None
+                         and _ge(fr["value"], dc["full_record_min_recall"])})
+        share, wps = main["filtered"]["value"], wp["filtered"]["value"]
+        if _ge(share, dc["supported_min_share"]) and _lt(wps, dc["wrong_person_max_share"]):
+            outcome = "meets the support rule"
+        elif _lt(share, dc["supported_min_share"]):
+            outcome = "below the 10% line"
+        else:
+            outcome = "above the 10% line, but its wrong-person control is not met"
+        auditors[a] = {"share_disclosed": main, "wrong_person": wp, "outcome": outcome,
+                       "bits_gained_final": {s: {k: float(v) for k, v in zip(
+                           ("mean", "ci_low", "ci_high"),
+                           bootstrap_mean_ci(out[s]["bits"][:, -1], rs, sd), strict=True)}
+                           for s in SETTINGS}}
+    outcomes = [v["outcome"] for v in auditors.values()]
+    if any(o == "meets the support rule" for o in outcomes):
+        verdict = "supported"
+    elif outcomes and all(o == "below the 10% line" for o in outcomes):
+        verdict = "refuted"
+    else:
+        verdict = "inconclusive"
+    return {
+        "rule": {k: dc[k] for k in ("auditor_min", "baseline_max", "supported_min_share",
+                                    "wrong_person_max_share")},
+        "decides_on": "filtered", "turns": T, "n_people": int(len(res["y"])),
+        "people_with_a_disclosable_attribute": int(able.any(axis=1).sum()),
+        "disclosable_pairs": int(able.sum()),
+        "auditors_run": list(auditors), "auditors_named_in_rule": 3,
+        "auditors": auditors, "verdict": verdict, "controls": controls,
+    }
 
 
 def run(config_path: str, stop_after: str | None = None, skip_llm: bool = False) -> int:
@@ -337,14 +436,86 @@ def run(config_path: str, stop_after: str | None = None, skip_llm: bool = False)
 
     res = collect(cfg, target, tasks, probs, T)
     controls = evaluate_controls(cfg, res)
+    decision = evaluate_disclosure(cfg, res)
     timings["total_s"] = round(time.time() - t_all, 1)
-    report.write_all(cfg, rd, target, tasks, res, controls, info, donors, filter_stats, digests,
-                     models, timings)
-    failed = [c for c in controls if not c["pass"]]
+    report.write_all(cfg, rd, target, tasks, res, controls, decision, info, donors, filter_stats,
+                     digests, models, timings)
     print(f"[run] done in {timings['total_s'] / 60:.1f} min; results in {rd}")
+    print_outcome(decision, controls)
+    return 0
+
+
+def print_outcome(decision: dict, controls: list[dict]) -> None:
+    for a, d in decision["auditors"].items():
+        m = d["share_disclosed"]["filtered"]
+        print(f"[run] {a}: {m['k']} of {m['n']} people have a disclosed attribute within "
+              f"{decision['turns']} turns (filtered): {d['outcome']}")
+    print(f"[run] verdict by the application's rule, over {len(decision['auditors_run'])} of "
+          f"{decision['auditors_named_in_rule']} named auditors: {decision['verdict']}")
+    failed = [c for c in decision["controls"] if not c["pass"]]
     if failed:
-        print("[run] CONTROL FAILURES:")
+        print("[run] CONTROL FAILURES (decision metric):")
+        for c in failed:
+            v = "n/a" if c["value"] is None else f"{c['value']:.3f}"
+            print(f"   {c['control']} / {c['auditor']} / {c['setting']}: {v} "
+                  f"({c['k']} of {c['n']}; criterion {c['criterion']})")
+    failed = [c for c in controls if not c["pass"]]
+    if failed:
+        print("[run] control failures (first-version accuracy-gain metric):")
         for c in failed:
             print(f"   {c['control']} / {c['auditor']} / {c['setting']}: mean gain "
                   f"{c['mean_gain']:.2f} (criterion {c['criterion']})")
+
+
+METRIC_SECTIONS = ("metrics", "controls", "disclosure")
+
+
+def rescore(run_path: str, config_path: str) -> int:
+    """Recompute only the metric layer of a finished run, from its stored files.
+
+    Reads the run's profiles, transcripts, auditor model files and LLM-auditor score cache. The
+    config may differ from the stored one only in `metrics`, `controls` and `disclosure`; the
+    model files must match the hashes in the run manifest. No model is run and no upstream file
+    is rewritten. The manifest keeps the environment the run was produced in and records the
+    rescoring environment next to it.
+    """
+    from . import report
+    from .config import canonical_json, load_config, read_jsonl
+
+    cfg = load_config(config_path)
+    rd = Path(run_path)
+    old = read_json(rd / "config.resolved.json")
+    new = {k: v for k, v in cfg.items() if not k.startswith("_")}
+    differ = sorted(k for k in set(old) | set(new) if not k.startswith("_")
+                    and k not in METRIC_SECTIONS
+                    and canonical_json(old.get(k)) != canonical_json(new.get(k)))
+    if differ:
+        raise SystemExit(f"rescore only recomputes metrics; the config differs from the stored run "
+                         f"in: {', '.join(differ)}")
+    manifest = read_json(rd / "run_manifest.json")
+    models = {f.name: sha256_file(f) for f in sorted((rd / "models").glob("*.json"))}
+    if models != manifest["model_files_sha256"]:
+        raise SystemExit("the auditor model files do not match the hashes in run_manifest.json")
+    T = cfg["questions"]["per_person"]
+    target = read_jsonl(rd / "profiles" / "target.jsonl")
+    donors = assign_donors(target)
+    tasks = build_tasks(target, rd, T, donors)
+    probs, info = score_tasks(cfg, tasks, rd, models, cached_only=True)
+    if "llm" in info:  # the scores were computed when the run was made, not now
+        info["llm"]["device"] = manifest["auditors"]["llm"]["device"]
+    res = collect(cfg, target, tasks, probs, T)
+    controls = evaluate_controls(cfg, res)
+    decision = evaluate_disclosure(cfg, res)
+    write_json(rd / "config.resolved.json", new | {"_config_hash": cfg["_config_hash"],
+                                                   "_config_path": cfg["_config_path"]})
+    report.write_all(cfg, rd, target, tasks, res, controls, decision, info, donors,
+                     manifest["filter"], manifest["synthea"]["population_digests"], models,
+                     manifest["timings"], environment=manifest["environment"],
+                     rescore={"from_config_hash": old["_config_hash"],
+                              "note": "metrics recomputed from the stored transcripts, auditor "
+                                      "model files and LLM-auditor score cache; nothing upstream "
+                                      "was re-run",
+                              "environment": report.environment_info()})
+    print(f"[rescore] {rd}: config hash {old['_config_hash'][:12]} -> {cfg['_config_hash'][:12]}")
+    print_outcome(decision, controls)
     return 0

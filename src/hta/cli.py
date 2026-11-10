@@ -64,6 +64,12 @@ def cmd_run(args) -> int:
     return run(args.config, stop_after=args.stop_after, skip_llm=args.skip_llm)
 
 
+def cmd_rescore(args) -> int:
+    from .pipeline import rescore
+
+    return rescore(args.run, args.config)
+
+
 def cmd_verify(args) -> int:
     from .verify import verify
 
@@ -111,6 +117,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--skip-llm", action="store_true",
                    help="no LLM auditor; writes results/<run>-lite (for machines without a GPU)")
     p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser("rescore", help="recompute only the metrics of a finished run from its "
+                                       "stored transcripts, model files and LLM-auditor cache")
+    p.add_argument("--run", required=True, help="results/<run>")
+    p.add_argument("--config", required=True)
+    p.set_defaults(func=cmd_rescore)
 
     p = sub.add_parser("verify", help="recompute one person's score from a transcript")
     p.add_argument("--person", required=True, help="results/<run>/per_person/<id>.json")

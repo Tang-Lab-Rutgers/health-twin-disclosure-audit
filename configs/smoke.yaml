@@ -63,12 +63,25 @@ auditors:
     base_url: ""
     env_var: HTA_API_KEY
 
+# Decision metric, as stated in the application (docs/decisions.md, "the decision metric follows
+# the application"). Set on 2026-11-10, after the demo had been run under the first-version metric
+# below and before this metric was computed on any run.
+disclosure:
+  auditor_min: 0.8               # an attribute the person has counts as disclosed when an auditor gives it >= 0.8
+  baseline_max: 0.5              # ... while the demographics-only baseline gives it < 0.5
+  supported_min_share: 0.10      # claim supported if >= 10% of people have a disclosed attribute within T turns
+  wrong_person_max_share: 0.02   # ... while the same auditor flags < 2% of people on another person's transcript
+  empty_max_share: 0.02          # control: < 2% of people flagged on an empty transcript
+  full_record_min_recall: 0.5    # control: >= 50% of disclosable (person, attribute) pairs flagged on the raw profile
+  bits_clip: 1.0e-6              # probabilities are clipped to [clip, 1 - clip] before taking log2
+
+# First-version metric (accuracy gain over the baseline), kept as a secondary output.
 metrics:
   threshold: 0.5
   crossing_points: 20
   bootstrap: {resamples: 200, seed: 7}
 
-# Pass criteria, fixed before any result was produced.
+# Pass criteria of the first-version metric, fixed before any result was produced.
 controls:
   empty_abs_max: 5.0                 # |mean gain| at turn 0 (empty transcript) must be <= 5 points
   wrong_person_max: 5.0              # mean gain with another person's transcript must be <= 5 points

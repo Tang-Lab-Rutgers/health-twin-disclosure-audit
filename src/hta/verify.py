@@ -8,10 +8,11 @@
 What is checked, in order:
   1. the transcript's SHA256 is one the report says it was computed from (this picks the setting);
   2. the run config and the auditor model files are the ones the report names (SHA256);
-  3. for every turn, the baseline and lexical-auditor accuracy and gain, recomputed from the
-     transcript, equal the stored values exactly;
+  3. from the transcript, the lexical auditor's disclosure record (which attributes were
+     disclosed, at which turn, and the bits gained at every turn) and its accuracy gain at every
+     turn equal the stored values exactly;
   4. the LLM auditor's stored scores (Yes/No probabilities, or raw JSON answers) are turned into
-     probabilities again and its gain recomputed (exact);
+     probabilities again, and its disclosure record and gain are recomputed (exact);
   5. optionally (--rerun-llm), the LLM auditor is run again on the transcript. This is reported,
      not required to match: a different CPU can change floating-point sums slightly.
 """
@@ -26,11 +27,18 @@ from .auditors.base import audit_record, render_transcript
 from .auditors.baseline import BaselineAuditor
 from .auditors.lexical import LexicalModel
 from .config import read_json, read_jsonl, sha256_file
-from .metrics import person_accuracy
+from .metrics import person_accuracy, person_disclosure
 
 
 def _r(v) -> float:
     return float(round(float(v), 6))
+
+
+def _describe(d: dict) -> str:
+    if not d["labels"]:
+        return f"no attribute disclosed; bits gained at the last turn {d['bits_gained'][-1]:+.2f}"
+    first = ", ".join(f"{k} at turn {t}" for k, t in sorted(d["labels"].items(), key=lambda x: x[1]))
+    return f"disclosed: {first}; bits gained at the last turn {d['bits_gained'][-1]:+.2f}"
 
 
 def verify(person_file: str, transcript_file: str, rerun_llm: bool = False) -> int:
@@ -82,6 +90,10 @@ def verify(person_file: str, transcript_file: str, rerun_llm: bool = False) -> i
     check("label order of lexical model equals the frozen label order",
           lparams["label_ids"] == label_ids)
     lp = LexicalModel(lparams).predict(records)
+    dcfg = cfg.get("disclosure")
+    if dcfg:
+        d = person_disclosure(lp, base_p[0], y[0], label_ids, dcfg)
+        check(f"lexical disclosure record, turns 0..{T}", d == lex.get("disclosure"), _describe(d))
     acc = person_accuracy(lp, np.repeat(y, T + 1, axis=0), thr)
     gain = [_r(v) for v in acc - base_acc]
     check(f"lexical gain at every turn 0..{T}", gain == lex["gain"],
@@ -108,6 +120,10 @@ def verify(person_file: str, transcript_file: str, rerun_llm: bool = False) -> i
             for key in llm["cache_keys"]:
                 vals, _ = parse_answer("{" + cache[key]["text"], short)
                 probs.append([vals.get(k, prior[j]) for j, k in enumerate(short)])
+        if dcfg:
+            d = person_disclosure(np.array(probs), base_p[0], y[0], label_ids, dcfg)
+            check(f"LLM disclosure record from stored scores, turns 0..{T}",
+                  d == llm.get("disclosure"), _describe(d))
         acc = person_accuracy(np.array(probs), np.repeat(y, T + 1, axis=0), thr)
         g = [_r(v) for v in acc - base_acc]
         check(f"LLM gain from stored raw answers, turns 0..{T}", g == llm["gain"],
@@ -122,8 +138,8 @@ def verify(person_file: str, transcript_file: str, rerun_llm: bool = False) -> i
             print(f"  [INFO] re-ran the LLM auditor: max probability difference {d:.2e}; "
                   f"gain identical at {sum(a == b for a, b in zip(g2, g, strict=True))} of {T + 1} turns")
 
-    stored = entry["auditors"]["lexical"]
-    print(f"Lexical auditor, {setting}: final gain {stored['gain'][-1]:+.1f} points, "
-          f"crossed {rep['crossing_points']} points: {stored['crossed']}")
+    for a, e in entry["auditors"].items():
+        if "disclosure" in e:
+            print(f"{a} auditor, {setting}: {_describe(e['disclosure'])}")
     print(f"RESULT: {'MATCH' if ok else 'MISMATCH'}")
     return 0 if ok else 1
