@@ -122,3 +122,19 @@ stored transcripts, the auditor model files and the LLM-auditor score cache, and
 config is unchanged outside `metrics`, `controls` and `disclosure`. It also checks that the model
 files match the hashes in the run manifest. Nothing upstream is re-run, so the transcripts, model
 files and cached LLM scores in `results/expected/` keep their SHA256s.
+
+## Changed after the rescore: no verdict unless the run meets the rule's conditions (2026-11-10)
+
+**What changed.** The rescored demo printed the verdict *refuted*, because both auditors stayed
+below 10% on filtered transcripts. That word overstates what the run can show. The verdict is now
+issued only when the run meets the conditions the application's rule assumes:
+- the three auditors the rule names have all run (`disclosure.required_auditors: 3`);
+- the turn budget is the rule's 20 turns (`disclosure.required_turns: 20`);
+- every decision-metric control passed, for every auditor and setting.
+
+Otherwise the verdict is *not decided*, and the report lists each unmet condition. The
+per-auditor readings ("below the 10% line" and so on) are still reported.
+
+**Timing and direction.** This change was made after the demo's rescored verdict was seen. It can
+only withhold a verdict; it can never turn one verdict into the other. The demo now reads *not
+decided*: it has two auditors and 10 turns, and four controls failed.

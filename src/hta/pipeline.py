@@ -377,21 +377,38 @@ def evaluate_disclosure(cfg: dict, res: dict) -> dict:
                            ("mean", "ci_low", "ci_high"),
                            bootstrap_mean_ci(out[s]["bits"][:, -1], rs, sd), strict=True)}
                            for s in SETTINGS}}
+    # A verdict is issued only when the run meets the conditions the rule assumes. Otherwise it is
+    # "not decided", with every unmet condition listed (docs/decisions.md).
+    reasons = []
+    need_a, need_t = dc["required_auditors"], dc["required_turns"]
+    if len(auditors) < need_a:
+        reasons.append(f"{len(auditors)} of the {need_a} auditors the rule names ran")
+    if T < need_t:
+        reasons.append(f"the run has {T} turns; the rule uses {need_t}")
+    for c in controls:
+        if not c["pass"]:
+            reasons.append(f"control failed: {c['control']}, {c['auditor']}, {c['setting']} "
+                           f"({c['k']} of {c['n']}; criterion {c['criterion']})")
     outcomes = [v["outcome"] for v in auditors.values()]
-    if any(o == "meets the support rule" for o in outcomes):
+    if reasons:
+        verdict = "not decided"
+    elif any(o == "meets the support rule" for o in outcomes):
         verdict = "supported"
-    elif outcomes and all(o == "below the 10% line" for o in outcomes):
+    elif all(o == "below the 10% line" for o in outcomes):
         verdict = "refuted"
     else:
-        verdict = "inconclusive"
+        verdict = "not decided"
+        reasons.append("no auditor meets the support rule, and not every auditor is below the "
+                       "10% line")
     return {
         "rule": {k: dc[k] for k in ("auditor_min", "baseline_max", "supported_min_share",
                                     "wrong_person_max_share")},
         "decides_on": "filtered", "turns": T, "n_people": int(len(res["y"])),
         "people_with_a_disclosable_attribute": int(able.any(axis=1).sum()),
         "disclosable_pairs": int(able.sum()),
-        "auditors_run": list(auditors), "auditors_named_in_rule": 3,
-        "auditors": auditors, "verdict": verdict, "controls": controls,
+        "auditors_run": list(auditors), "auditors_named_in_rule": need_a,
+        "turns_in_rule": need_t, "auditors": auditors, "verdict": verdict,
+        "verdict_reasons": reasons, "controls": controls,
     }
 
 
@@ -450,8 +467,9 @@ def print_outcome(decision: dict, controls: list[dict]) -> None:
         m = d["share_disclosed"]["filtered"]
         print(f"[run] {a}: {m['k']} of {m['n']} people have a disclosed attribute within "
               f"{decision['turns']} turns (filtered): {d['outcome']}")
-    print(f"[run] verdict by the application's rule, over {len(decision['auditors_run'])} of "
-          f"{decision['auditors_named_in_rule']} named auditors: {decision['verdict']}")
+    print(f"[run] verdict: {decision['verdict']}")
+    for r in decision["verdict_reasons"]:
+        print(f"   - {r}")
     failed = [c for c in decision["controls"] if not c["pass"]]
     if failed:
         print("[run] CONTROL FAILURES (decision metric):")

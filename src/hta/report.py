@@ -231,8 +231,8 @@ def write_all(cfg, rd: Path, target, tasks, res, controls, decision, info, donor
     for a, d in decision["auditors"].items():
         add("decision", a, "filtered", "outcome", None, note=d["outcome"])
     add("decision", "", "filtered", "verdict", None,
-        note=f"{decision['verdict']} (over {len(decision['auditors_run'])} of "
-             f"{decision['auditors_named_in_rule']} named auditors; {n} people; {T} turns)")
+        note=decision["verdict"] + (" because: " + "; ".join(decision["verdict_reasons"])
+                                    if decision["verdict_reasons"] else ""))
     add("baseline", "baseline", "", "mean_accuracy", res["baseline"]["acc"].mean(), n=n)
     add("baseline", "baseline", "", "mean_headroom_points", head.mean(), n=n,
         note="100 minus baseline accuracy: the largest gain possible for that person")
@@ -392,18 +392,18 @@ def _decision_md(cfg, decision) -> list[str]:
               f"least {dc['supported_min_share']:.0%} of people have a disclosed attribute while the "
               f"same auditor flags fewer than {dc['wrong_person_max_share']:.0%} of people on another "
               f"person's transcript; refuted if fewer than {dc['supported_min_share']:.0%} do for "
-              "every auditor.", ""]
+              f"every auditor. A verdict is issued only when all {decision['auditors_named_in_rule']} "
+              f"auditors ran, the run has {decision['turns_in_rule']} turns and every control passed.",
+              "", "Reading of each auditor:", ""]
     for a, d in decision["auditors"].items():
         lines.append(f"- {a}: {d['outcome']}.")
-    n_run, n_named = len(decision["auditors_run"]), decision["auditors_named_in_rule"]
-    lines += ["", f"**Verdict for this run: {decision['verdict']}**, over {n_run} of the {n_named} "
-              f"auditors the rule names, {n} people and {T} turns."]
-    if n_run < n_named or T < 20:
-        lines.append(f"The rule names {n_named} auditors and 20 turns; this run has {n_run} and {T}, "
-                     "so the verdict describes this run, not the claim.")
+    lines += ["", f"**Verdict for this run: {decision['verdict']}.**"]
+    if decision["verdict_reasons"]:
+        lines += ["", "Why:", ""] + [f"- {r}" for r in decision["verdict_reasons"]]
     weak = [c["auditor"] for c in decision["controls"]
             if c["control"] == "full_record" and not c["pass"]]
     if weak:
+        lines.append("")
         lines.append(f"{', '.join(weak)} failed the full-record control: given the raw record, "
                      "it does not flag most attributes the record names. A reading below the "
                      "line from such an auditor is not evidence that little was disclosed.")

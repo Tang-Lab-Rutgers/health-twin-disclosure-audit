@@ -1,11 +1,16 @@
 # SPDX-FileCopyrightText: 2026 Ruixiang Tang
 # SPDX-License-Identifier: Apache-2.0
-.PHONY: demo reproduce smoke test test-all lint verify compare clean
+.PHONY: check demo reproduce smoke test test-all lint verify compare clean
 
 UV ?= uv
 
 # The LLM steps run on an NVIDIA GPU (the gpu extra, Linux + CUDA 12.8). Override with EXTRA=cpu.
 EXTRA ?= $(shell command -v nvidia-smi >/dev/null 2>&1 && echo gpu || echo cpu)
+
+check:           ## CPU only, a few minutes, no Java or model download: unit tests + re-verify every committed score
+	$(UV) sync --locked --extra cpu
+	$(UV) run --extra cpu pytest -q -m "not slow"
+	$(UV) run --extra cpu python -m hta verify-all --run results/expected
 
 demo:            ## demo.yaml on a GPU, verify, compare with results/expected
 	$(UV) sync --locked --extra $(EXTRA)
