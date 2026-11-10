@@ -65,10 +65,14 @@ class CachedGenerator:
         threads = int(os.environ.get("HTA_THREADS", self.gcfg.get("torch_threads", 4)))
         torch.set_num_threads(threads)
         torch.manual_seed(0)
+        from .config import resolve_device
+
+        device = resolve_device(self.gcfg.get("device", "auto"))
+        self.device_used = device
         model = AutoModelForCausalLM.from_pretrained(
-            self.gcfg["model"], revision=self.gcfg["revision"], dtype=torch.float32,
-            attn_implementation="sdpa",
-        ).eval().to(self.gcfg.get("device", "cpu"))
+            self.gcfg["model"], revision=self.gcfg["revision"],
+            dtype=getattr(torch, self.gcfg.get("dtype", "float32")), attn_implementation="sdpa",
+        ).eval().to(device)
         self._backend = ("transformers", model)
 
     def key(self, prompt: str) -> str:

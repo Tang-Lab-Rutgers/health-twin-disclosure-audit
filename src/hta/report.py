@@ -102,10 +102,13 @@ def environment_info() -> dict:
                                            text=True).stdout.strip())
     except OSError:
         pass
+    if not git.get("commit") and os.environ.get("HTA_GIT_COMMIT"):  # run from an exported copy
+        git = {"commit": os.environ["HTA_GIT_COMMIT"], "dirty": False, "source": "HTA_GIT_COMMIT"}
     import torch
 
+    gpu = torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
     return {
-        "python": sys.version.split()[0], "platform": platform.platform(),
+        "python": sys.version.split()[0], "platform": platform.platform(), "gpu": gpu,
         "machine": platform.machine(), "processor": platform.processor(),
         "cpu_count": os.cpu_count(), "torch_threads": torch.get_num_threads(),
         "packages": versions, "git": git,
@@ -231,8 +234,9 @@ def write_all(cfg, rd: Path, target, tasks, res, controls, info, donors, filter_
                     "reference_date": cfg["synthea"]["reference_date"],
                     "target": cfg["synthea"]["target"], "reference": cfg["synthea"]["reference"],
                     "population_digests": digests},
-        "twin": {k: cfg["twin"][k] for k in ("backend", "model", "revision", "license",
-                                              "max_new_tokens", "batch_size")},
+        "twin": {**{k: cfg["twin"][k] for k in ("backend", "model", "revision", "license",
+                                                 "max_new_tokens", "batch_size")},
+                 "device": timings.get("twin_device")},
         "auditors": info, "model_files_sha256": models,
         "bootstrap": mcfg["bootstrap"], "filter": filter_stats, "timings": timings,
         "environment": environment_info(),

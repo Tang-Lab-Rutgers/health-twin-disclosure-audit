@@ -42,28 +42,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Build image
-        run: docker build -t hta .
+      - name: Build image (CPU variant; the default GPU variant needs a GPU runner)
+        run: docker build --build-arg EXTRA=cpu -t hta .
       - name: Unit tests inside the image
         run: docker run --rm hta make test
-
-  demo-in-docker:
-    # Manual: the full demo in the reference Docker image, uploaded as an artifact.
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 360
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - run: docker build -t hta .
-      - name: make demo inside the image
-        run: |
-          mkdir -p out
-          set +e
-          docker run --rm -v "$PWD/out:/app/results" -v "$PWD/results/expected:/app/results/expected:ro" \
-            hta make demo 2>&1 | tee out/make_demo.log
-          echo "${PIPESTATUS[0]}" > out/exit_code
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
-        if: always()
-        with: {name: demo-results, path: out}
-      - name: Fail if make demo failed
-        run: test "$(cat out/exit_code)" = 0

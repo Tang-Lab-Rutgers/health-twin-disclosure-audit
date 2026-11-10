@@ -61,7 +61,7 @@ def cmd_freeze_labels(args) -> int:
 def cmd_run(args) -> int:
     from .pipeline import run
 
-    return run(args.config, stop_after=args.stop_after)
+    return run(args.config, stop_after=args.stop_after, skip_llm=args.skip_llm)
 
 
 def cmd_verify(args) -> int:
@@ -108,6 +108,8 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("run", help="run the whole pipeline for a config")
     p.add_argument("--config", default="configs/demo.yaml")
     p.add_argument("--stop-after", choices=["twin"], help="stop after generating the transcripts")
+    p.add_argument("--skip-llm", action="store_true",
+                   help="no LLM auditor; writes results/<run>-lite (for machines without a GPU)")
     p.set_defaults(func=cmd_run)
 
     p = sub.add_parser("verify", help="recompute one person's score from a transcript")

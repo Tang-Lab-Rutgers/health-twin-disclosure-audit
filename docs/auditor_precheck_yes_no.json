@@ -1,0 +1,84 @@
+{
+  "n_reference_people": 20,
+  "method": "yes_no",
+  "rule": "smallest candidate with share_of_headroom >= 0.5 and unusable rate < 0.2",
+  "chosen": "allenai/OLMo-2-1124-7B-Instruct",
+  "results": [
+    {
+      "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+      "revision": "a10cc1512eabd3dde888204e902eca88bddb4951",
+      "params_billion": 0.36,
+      "seconds_per_prompt": 1.57,
+      "device": "cpu",
+      "mean_gain": -51.25,
+      "mean_headroom": 20.62,
+      "share_of_headroom": -2.485,
+      "method": "yes_no",
+      "parse": {
+        "records": 20,
+        "labels_total": 320,
+        "labels_fallback": 0
+      },
+      "example_raw": "{\"mass\":[0.9818880023097449,0.9811410199911279,0.9779308648080018,0.9818080230603812,0.98131025780458,0.981644758980309,0.9826834392277988,0.9821953837475803,0.9840209606531971,0.980607177021966,0.9768519024394209,0.9803610124696434,0.9749485793715849,0.980968384477876,0.9782043747861735,0.979957572",
+      "unusable_rate": 0.0,
+      "passes": false
+    },
+    {
+      "model": "allenai/OLMo-2-0425-1B-Instruct",
+      "revision": "48d788eca847d4d7548f375ad03d3c9312f6139e",
+      "params_billion": 1.48,
+      "seconds_per_prompt": 3.96,
+      "device": "cpu",
+      "mean_gain": 8.12,
+      "mean_headroom": 20.62,
+      "share_of_headroom": 0.394,
+      "method": "yes_no",
+      "parse": {
+        "records": 20,
+        "labels_total": 320,
+        "labels_fallback": 0
+      },
+      "example_raw": "{\"mass\":[0.9777844383049032,0.9731947954348286,0.9668063156072435,0.9662923111534418,0.9597578797969994,0.9616303627872469,0.9802526196873842,0.983637260672289,0.9702217493671412,0.9824445346547392,0.9681382895933819,0.9653604113266923,0.9754582075285754,0.9798239293033433,0.9773806867988242,0.97733",
+      "unusable_rate": 0.0,
+      "passes": false
+    },
+    {
+      "model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "revision": "31b70e2e869a7173562077fd711b654946d38674",
+      "params_billion": 1.71,
+      "seconds_per_prompt": 2.98,
+      "device": "cpu",
+      "mean_gain": 5.0,
+      "mean_headroom": 20.62,
+      "share_of_headroom": 0.242,
+      "method": "yes_no",
+      "parse": {
+        "records": 20,
+        "labels_total": 320,
+        "labels_fallback": 0
+      },
+      "example_raw": "{\"mass\":[0.9885970804883897,0.9887581827694731,0.9867905982637524,0.9894568331555362,0.9911316967040307,0.9846486924901683,0.9872485987890656,0.9883125376706516,0.9893457322560835,0.9890067672732101,0.9815309667272061,0.9811137894480453,0.9772912785828964,0.9752933680576916,0.9771855394248377,0.9722",
+      "unusable_rate": 0.0,
+      "passes": false
+    },
+    {
+      "model": "allenai/OLMo-2-1124-7B-Instruct",
+      "revision": "470b1fba1ae01581f270116362ee4aa1b97f4c84",
+      "params_billion": 7.3,
+      "seconds_per_prompt": 8.2,
+      "device": "cpu",
+      "mean_gain": 16.88,
+      "mean_headroom": 20.62,
+      "share_of_headroom": 0.818,
+      "method": "yes_no",
+      "parse": {
+        "records": 20,
+        "labels_total": 320,
+        "labels_fallback": 0
+      },
+      "example_raw": "{\"mass\":[0.999885685943965,0.9998727017693998,0.9997283334544926,0.9998505174261365,0.9998578737039893,0.9997802729971426,0.9998527180200041,0.9999082940566342,0.9998427347746213,0.9998740229622429,0.9998941016198484,0.9998987131101948,0.9998396000693477,0.9998961450049888,0.9998736211919586,0.99995",
+      "unusable_rate": 0.0,
+      "passes": true
+    }
+  ]
+}

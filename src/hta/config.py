@@ -46,7 +46,7 @@ def resolve(path: str | Path) -> Path:
     return p if p.is_absolute() else REPO_ROOT / p
 
 
-def load_config(path: str | Path) -> dict:
+def load_config(path: str | Path, skip_llm: bool = False) -> dict:
     """Load a run config, inline the frozen label file and question templates, add a hash.
 
     The hash covers everything that can change a result: the run config itself, the frozen
@@ -54,6 +54,9 @@ def load_config(path: str | Path) -> dict:
     """
     cfg = load_yaml(path)
     cfg["_config_path"] = str(path)
+    if skip_llm:  # `make demo-lite`: same run without the LLM auditor, in its own directory
+        cfg["auditors"]["llm"]["enabled"] = False
+        cfg["run_name"] = f"{cfg['run_name']}-lite"
     labels_path = resolve(cfg["labels_file"])
     cfg["labels"] = load_yaml(labels_path) if labels_path.exists() else None
     cfg["synonyms"] = load_yaml(resolve(cfg["filter"]["synonyms_file"]))
@@ -110,3 +113,20 @@ def read_jsonl(path: str | Path) -> list[dict]:
 def read_json(path: str | Path) -> Any:
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def resolve_device(device: str | None) -> str:
+    """`auto` means CUDA when a GPU is visible, else CPU. On CUDA, switch on deterministic
+    kernels and switch off TF32, so that a rerun on the same GPU gives the same numbers."""
+    import torch
+
+    dev = device or "auto"
+    if dev == "auto":
+        dev = "cuda" if torch.cuda.is_available() else "cpu"
+    if dev.startswith("cuda"):
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+        torch.use_deterministic_algorithms(True, warn_only=True)
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+        torch.backends.cudnn.benchmark = False
+    return dev

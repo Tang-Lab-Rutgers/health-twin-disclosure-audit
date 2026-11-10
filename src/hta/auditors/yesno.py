@@ -83,9 +83,14 @@ class YesNoAuditor:
         from transformers import AutoModelForCausalLM
 
         torch.set_num_threads(int(os.environ.get("HTA_THREADS", self.acfg.get("torch_threads", 4))))
+        from ..config import resolve_device
+
+        device = resolve_device(self.acfg.get("device", "auto"))
+        self.device_used = device
         self._model = AutoModelForCausalLM.from_pretrained(
-            self.acfg["model"], revision=self.acfg["revision"], dtype=torch.float32,
-            attn_implementation="sdpa").eval().to(self.acfg.get("device", "cpu"))
+            self.acfg["model"], revision=self.acfg["revision"],
+            dtype=getattr(torch, self.acfg.get("dtype", "float32")),
+            attn_implementation="sdpa").eval().to(device)
         tok = self.tokenizer()
         self._ids = {k: sorted({tok(w, add_special_tokens=False).input_ids[0] for w in ws})
                      for k, ws in ANSWER_WORDS.items()}

@@ -217,6 +217,7 @@ def score_tasks(cfg: dict, tasks: list[dict], rd: Path, models: dict) -> tuple[d
             t["llm"] = {"cache_key": d["key"], "parse_status": d["status"]}
         info["llm"] = {"model": acfg["model"], "revision": acfg["revision"],
                        "backend": acfg.get("backend", "transformers"),
+                       "device": getattr(aud, "device_used", "cached"),
                        "method": acfg.get("method", "yes_no"), "parse": aud.stats}
     if api_enabled(cfg["auditors"]["api"]):
         probs["api"] = APIAuditor(cfg["auditors"]["api"], cfg["labels"], baseline).predict(recs)
@@ -294,12 +295,12 @@ def evaluate_controls(cfg: dict, res: dict) -> list[dict]:
     return rows
 
 
-def run(config_path: str, stop_after: str | None = None) -> int:
+def run(config_path: str, stop_after: str | None = None, skip_llm: bool = False) -> int:
     from . import report
     from .config import load_config
 
     t_all = time.time()
-    cfg = load_config(config_path)
+    cfg = load_config(config_path, skip_llm=skip_llm)
     if cfg["labels"] is None:
         raise RuntimeError(f"{cfg['labels_file']} is missing; run `python -m hta freeze-labels` once")
     rd = run_dir(cfg)
@@ -320,6 +321,7 @@ def run(config_path: str, stop_after: str | None = None) -> int:
     filter_stats = {"reference": stage_transcripts(cfg, reference, "reference", gen, rd),
                     "target": stage_transcripts(cfg, target, "target", gen, rd)}
     timings["twin_s"] = round(time.time() - t0, 1)
+    timings["twin_device"] = getattr(gen, "device_used", "cached")
     print(f"[run] filter: {filter_stats}")
     if stop_after == "twin":
         print("[run] stopping after the twin stage (--stop-after twin)")
