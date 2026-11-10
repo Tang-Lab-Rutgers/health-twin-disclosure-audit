@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Compare a fresh run with the committed expected outputs (results/expected).
 
-Tier A must match exactly everywhere: Synthea files, profiles and labels, question order, the
+Tier A must match exactly everywhere: the Synthea population (file names, and the parsed
+profiles and labels; the raw files themselves are byte-identical on the same CPU type), the
+question order, the
 filter applied to the run's own unfiltered answers, and the lexical/baseline scores recomputed
 from the run's own transcripts (checked by `hta verify` on every person).
 
@@ -39,9 +41,13 @@ def compare(expected: str, actual: str) -> int:
     se, sa = read_json(e / "synthea_sha256.json"), read_json(a / "synthea_sha256.json")
     n = sum(len(v) for v in se.values())
     same = sum(se[p].get(k) == sa.get(p, {}).get(k) for p in se for k in se[p])
-    ok = same == n and se == sa
-    hard_fail |= not ok
-    line("OK" if ok else "FAIL", f"Synthea FHIR files identical: {same}/{n}")
+    names_ok = all(set(se[p]) == set(sa.get(p, {})) for p in se)
+    hard_fail |= not names_ok
+    # Same CPU architecture: byte-identical. Across architectures Java's floating-point maths can
+    # differ in the last digit of a few extension values that the pipeline does not read, so the
+    # hard check is on the parsed profiles below.
+    line("OK" if same == n else "INFO", f"Synthea FHIR files byte-identical: {same}/{n}"
+         + ("" if same == n else " (last-digit float differences across CPU types; see profiles)"))
     for pop in ("target", "reference"):
         pe, pa = e / "profiles" / f"{pop}.jsonl", a / "profiles" / f"{pop}.jsonl"
         ok = sha256_file(pe) == sha256_file(pa)

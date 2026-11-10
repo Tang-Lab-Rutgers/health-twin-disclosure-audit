@@ -17,14 +17,55 @@ single person's score can be re-checked from its transcript with one command.
 It is the open, preliminary artefact for an application to the Open Science Foundation call
 *Verifiable privacy for digital health twins*. All data are synthetic.
 
-> **Status (2026-11-09): results pending.** The code, tests, CI and the design record are
-> complete. The committed demo run (`results/expected/`: figure, summary, per-person reports,
-> transcripts) is being produced on a GPU and will be added in the first tagged release. Until
-> then `make demo` and `hta verify` work, but `make demo` has nothing to compare against.
+## Results of the committed demo run
 
-The numbers will be reported as they come out. No question, filter, prompt or threshold is tuned
-after seeing them, and [`docs/decisions.md`](docs/decisions.md) records every design choice and
-when it was made, including the choice of the LLM auditor.
+30 synthetic adults, 10 questions each, 16 attribute labels. The twin is SmolLM2-360M, the LLM
+auditor is OLMo-2-7B. The run took 11.7 minutes on one H200 GPU. Every number below comes
+unchanged from [`results/expected/`](results/expected/); the full tables are in
+[`report.md`](results/expected/report.md). Nothing was tuned after the results existed.
+
+![Mean disclosure gain per turn](results/expected/curves.png)
+
+**Two of the three controls failed, so the curves above cannot yet be read as disclosure
+measurements.** That is the main finding of this preliminary run. The failures are reported
+here as they came out:
+
+- **Lexical auditor, full-record control: failed.** Given the raw profile text, it gains only
+  +3.5 points. The criterion is at least +7.5, half the mean headroom. Trained on 200
+  reference records, it never flags the rarer labels (hyperlipidemia, type 2 diabetes,
+  opioids, ...) even when the record names them. Its small gains on transcripts are therefore a
+  weak lower bound, not evidence of little leakage.
+- **LLM auditor, empty-transcript control: failed narrowly.** Its mean gain is −5.4 points,
+  against a criterion of |gain| ≤ 5. With no text it answers "no" for every label, while the
+  baseline says "yes" for common conditions in older people. Its curve stays at that level
+  through all 10 turns, so the transcripts do not move its yes/no calls. It passes the
+  full-record control (+13.1 points), so it can read a record when the information is in it.
+- Both auditors pass the wrong-person control.
+
+What the numbers say, within those limits:
+
+| Auditor | Setting | Gain at turn 10 (95% CI) | People crossing 20 points |
+|---|---|---|---|
+| Lexical | unfiltered | +0.8 (−2.3 to +4.6) | 2 of 30 |
+| Lexical | filtered | +1.0 (−1.7 to +4.6) | 2 of 30 |
+| LLM | unfiltered | −5.0 (−9.4 to −1.0) | 0 of 30 |
+| LLM | filtered | −5.4 (−10.0 to −1.2) | 0 of 30 |
+
+- The age-and-sex baseline is already 85% accurate. The mean headroom is 15 points, and only
+  7 of the 30 people have 20 points of headroom at all, so the 20-point line is out of reach for
+  most people by construction.
+- The filter refused 3.3% of answers. 42% of answers named the person or another identifier and
+  had it redacted.
+- Per-label AUROC: most of the auditors' high values come from the age-and-sex prior they
+  share with the baseline. With the baseline's own AUROC alongside, the text adds little
+  ([`docs/demo_auroc.md`](docs/demo_auroc.md)).
+- **Reproducibility.** The twin's answers were identical between an Apple M3 CPU and an H200 GPU
+  (300 of 300 target answers), and `hta verify-all` reproduces all 60 stored scores exactly on
+  another machine ([`docs/cross_platform.md`](docs/cross_platform.md)).
+
+The next step is to fix the two auditor weaknesses. That would be a pre-registered change,
+checked on the reference population only and labelled as made after these results. It is not
+part of this release.
 
 ## Quickstart
 
@@ -144,8 +185,11 @@ Edit one answer in a transcript and run `verify` again: the SHA256 check fails, 
   variants), the Synthea jar (version and SHA256 in the config), and every Hugging Face model
   (commit hash). `run_manifest.json` records versions, revisions, seeds, hardware and wall time.
 - **Exact everywhere:**
-  - the Synthea FHIR files (same seed, byte-identical; tested in `tests/test_synthea_determinism.py`);
-  - the profiles, labels and question order;
+  - the synthetic population: same seed, same parsed profiles and labels on every machine.
+    The raw Synthea files are byte-identical on the same CPU type
+    (`tests/test_synthea_determinism.py`); across CPU types a few files differ in the last digit
+    of a value the pipeline does not read;
+  - the question order;
   - the filter applied to a given answer;
   - the baseline and lexical scores computed from a given transcript.
 - **LLM output:** greedy decoding; deterministic CUDA kernels; TF32 off; batches fixed in

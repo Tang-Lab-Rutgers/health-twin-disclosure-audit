@@ -293,10 +293,13 @@ def write_report_md(cfg, rd, res, controls, summaries, filter_stats, info) -> No
                   f"`{info['llm']['method']}`. {ps['labels_fallback']} of {ps['labels_total']} label "
                   "values fell back to the baseline (unanswered or unparseable)."]
     lines += ["", f"## Per-label AUROC at turn {T} (filtered setting)", "",
-              "| Label | " + " | ".join(res["auditors"]) + " |",
-              "|---|" + "---|" * len(res["auditors"])]
+              "Both auditors include the demographics-only prior, so compare each with the baseline.",
+              "",
+              "| Label | baseline | " + " | ".join(res["auditors"]) + " |",
+              "|---|---|" + "---|" * len(res["auditors"])]
     for lid in res["label_ids"]:
-        vals = []
+        b = res["baseline"]["auroc"][lid]
+        vals = ["n/a" if b is None else f"{b:.2f}"]
         for a in res["auditors"]:
             v = res["auditors"][a]["filtered"]["auroc_final"][lid]
             vals.append("n/a" if v is None else f"{v:.2f}")

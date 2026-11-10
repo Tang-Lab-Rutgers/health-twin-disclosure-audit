@@ -239,7 +239,8 @@ def collect(cfg: dict, target: list[dict], tasks: list[dict], probs: dict, T: in
     for i in base_rows:
         base_p[pidx[tasks[i]["pid"]]] = probs["baseline"][i]
     base_acc = person_accuracy(base_p, y, thr)
-    res["baseline"] = {"probs": base_p, "acc": base_acc, "headroom": 100.0 - base_acc}
+    res["baseline"] = {"probs": base_p, "acc": base_acc, "headroom": 100.0 - base_acc,
+                       "auroc": per_label_auroc(base_p, y, L)}
     for a in probs:
         if a == "baseline":
             continue

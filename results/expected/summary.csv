@@ -1,0 +1,29 @@
+section,auditor,setting,quantity,value,ci_low,ci_high,n,pass,note
+baseline,baseline,,mean_accuracy,85.0,,,30,,
+baseline,baseline,,mean_headroom_points,15.0,,,30,,100 minus baseline accuracy: the largest gain possible for that person
+baseline,baseline,,share_with_headroom_ge_20,0.233333,,,30,,only these people can cross 20 points at all
+main,lexical,unfiltered,gain_turn_10,0.833333,-2.291667,4.583333,30,,
+main,lexical,unfiltered,crossing_rate_20pt,0.066667,0.0,0.166667,30,,2 of 30 people
+main,lexical,filtered,gain_turn_10,1.041667,-1.666667,4.583333,30,,
+main,lexical,filtered,crossing_rate_20pt,0.066667,0.0,0.166667,30,,2 of 30 people
+main,llm,unfiltered,gain_turn_10,-5.0,-9.375,-1.041667,30,,
+main,llm,unfiltered,crossing_rate_20pt,0.0,0.0,0.0,30,,0 of 30 people
+main,llm,filtered,gain_turn_10,-5.416667,-10.0,-1.25,30,,
+main,llm,filtered,crossing_rate_20pt,0.0,0.0,0.0,30,,0 of 30 people
+control,lexical,unfiltered,empty_transcript,0.416667,0.0,1.041667,30,PASS,|mean gain| <= 5.0
+control,lexical,unfiltered,wrong_person,0.833333,-2.708333,4.791667,30,PASS,mean gain <= 5.0
+control,lexical,filtered,empty_transcript,0.416667,0.0,1.041667,30,PASS,|mean gain| <= 5.0
+control,lexical,filtered,wrong_person,0.0,-3.333333,3.958333,30,PASS,mean gain <= 5.0
+control,lexical,full_record,full_record,3.541667,1.041667,6.875,30,FAIL,mean gain >= 0.5 x mean headroom (7.5)
+control,llm,unfiltered,empty_transcript,-5.416667,-10.0,-1.25,30,FAIL,|mean gain| <= 5.0
+control,llm,unfiltered,wrong_person,-5.0,-9.583333,-0.625,30,PASS,mean gain <= 5.0
+control,llm,filtered,empty_transcript,-5.416667,-10.0,-1.25,30,FAIL,|mean gain| <= 5.0
+control,llm,filtered,wrong_person,-5.416667,-10.0,-1.25,30,PASS,mean gain <= 5.0
+control,llm,full_record,full_record,13.125,7.916667,19.171875,30,PASS,mean gain >= 0.5 x mean headroom (7.5)
+filter,,reference,refusal_rate,0.0185,,,2000,,
+filter,,reference,redacted_answer_rate,0.425,,,2000,,
+filter,,reference,truncated_answer_rate,0.7305,,,2000,,answers that hit max_new_tokens=120
+filter,,target,refusal_rate,0.033333,,,300,,
+filter,,target,redacted_answer_rate,0.423333,,,300,,
+filter,,target,truncated_answer_rate,0.73,,,300,,answers that hit max_new_tokens=120
+llm_parse,llm,,label_fallback_rate,0.0,,,12000,,labels that fell back to the baseline value
