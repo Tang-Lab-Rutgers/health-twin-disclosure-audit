@@ -17,29 +17,37 @@ single person's score can be re-checked from its transcript with one command.
 It is the open, preliminary artefact for an application to the Open Science Foundation call
 *Verifiable privacy for digital health twins*. All data are synthetic.
 
-**Results of the committed demo run:** see [`results/expected/report.md`](results/expected/report.md)
-and the figure below. The numbers are reported as they came out. No question, filter, prompt or
-threshold was tuned after seeing them; [`docs/decisions.md`](docs/decisions.md) records every
-design choice and when it was made.
+> **Status (2026-11-09): results pending.** The code, tests, CI and the design record are
+> complete. The committed demo run (`results/expected/`: figure, summary, per-person reports,
+> transcripts) is being produced on a GPU and will be added in the first tagged release. Until
+> then `make demo` and `hta verify` work, but `make demo` has nothing to compare against.
 
-![Mean disclosure gain per turn](results/expected/curves.png)
+The numbers will be reported as they come out. No question, filter, prompt or threshold is tuned
+after seeing them, and [`docs/decisions.md`](docs/decisions.md) records every design choice and
+when it was made, including the choice of the LLM auditor.
 
 ## Quickstart
 
-Requirements: Linux or macOS, Java 17 or newer (for Synthea), [uv](https://docs.astral.sh/uv/),
-about 4 GB of free RAM and 6 GB of disk. No GPU, no API key, no account.
+Requirements:
+- Linux with an NVIDIA GPU with at least 40 GB of memory and a CUDA 12.8 driver. The LLM auditor
+  is a 7B model in float32.
+- Java 17 or newer, for Synthea.
+- [uv](https://docs.astral.sh/uv/).
+- About 45 GB of disk for the models.
+
+No API key or account is needed.
 
 ```bash
-git clone https://github.com/Ryan-Tang-RU/health-twin-disclosure-audit
+git clone https://github.com/Tang-Lab-Rutgers/health-twin-disclosure-audit
 cd health-twin-disclosure-audit
 make demo          # or ./reproduce.sh if you do not have make
 ```
 
-Or with Docker, which needs nothing else installed:
+Or with Docker (needs the NVIDIA Container Toolkit):
 
 ```bash
 docker build -t hta .
-docker run --rm -v "$PWD/results:/app/results" hta     # runs `make demo`
+docker run --rm --gpus all -v "$PWD/results:/app/results" hta     # runs `make demo`
 ```
 
 `make demo` does the following:
@@ -51,19 +59,18 @@ docker run --rm -v "$PWD/results:/app/results" hta     # runs `make demo`
 6. Re-verifies every person's score.
 7. Compares everything with `results/expected/`.
 
-Results appear in `results/demo/`.
+Results appear in `results/demo/`. The measured wall time and the GPU of the committed run are in
+`timings` and `environment` in [`results/expected/run_manifest.json`](results/expected/run_manifest.json).
 
-**Runtime.** See `timings` in [`results/expected/run_manifest.json`](results/expected/run_manifest.json)
-for the measured wall time of the committed run and the machine it ran on. The spec's target was
-20 minutes on a laptop CPU, and this run does not meet it: about 2,300 twin answers and roughly
-700 LLM-auditor prompts dominate the time. For a quick end-to-end check, use `make smoke` (5 people,
-3 turns, a 135M-parameter twin, a few minutes); it is a test, not a result.
+Without a GPU, `make test` and `make smoke` still run on a CPU in minutes (`EXTRA=cpu`), and
+`hta verify` re-checks any committed score on any machine in seconds. The full demo also runs
+on a CPU (`EXTRA=cpu make demo`), but the 7B auditor then needs about 32 GB of RAM and hours.
 
 | Command | What it does |
 |---|---|
-| `make demo` | demo run (`configs/demo.yaml`), verify, compare with `results/expected/` |
-| `make reproduce` | full run (`configs/full.yaml`: 300 + 2000 people, 20 turns); GPU recommended |
-| `make smoke` | tiny end-to-end run, minutes |
+| `make demo` | demo run (`configs/demo.yaml`, GPU), verify, compare with `results/expected/` |
+| `make reproduce` | full run (`configs/full.yaml`: 300 + 2000 people, 20 turns, GPU) |
+| `make smoke` | tiny end-to-end run on a CPU, a few minutes; a test, not a result |
 | `make test` | unit tests; `make test-all` adds the Synthea determinism and smoke tests |
 | `make lint` | `ruff` and `reuse lint` |
 
@@ -141,12 +148,13 @@ Edit one answer in a transcript and run `verify` again: the SHA256 check fails, 
   - the profiles, labels and question order;
   - the filter applied to a given answer;
   - the baseline and lexical scores computed from a given transcript.
-- **LLM text:** greedy decoding on CPU, with batches fixed in advance so that resuming a run
-  gives the same batches. Expect identical text on the same CPU architecture and image. Across
-  CPU types, floating-point differences can flip a token, after which that answer diverges.
-  `hta compare` then reports how many answers match and checks the headline numbers within a
-  stated tolerance (±3 gain points and ±0.10 crossing rate; see `src/hta/compare.py`). It
-  does not claim an exact match it cannot guarantee.
+- **LLM output:** greedy decoding; deterministic CUDA kernels; TF32 off; batches fixed in
+  advance, so that resuming a run gives the same batches. Expect identical text when you rerun on
+  the same GPU model and image. On a different GPU or CPU, floating-point differences can flip a
+  token, after which that answer diverges. `hta compare` then reports how many answers match and
+  checks the headline numbers within a stated tolerance (±3 gain points and ±0.10 crossing rate;
+  see `src/hta/compare.py`). It does not claim an exact match it cannot guarantee.
+  `docs/cross_platform.md` reports the measured drift between two machines.
 
 ## Data statement
 
@@ -178,7 +186,9 @@ config hash written into every report.
 - **Small scale.** 30 target people and 10 turns in the demo, so the confidence intervals are
   wide. The full configuration (300 people, 20 turns) is provided but was not run for this release.
 - **Small models.** The twin is a 360M-parameter model. A stronger twin gives more specific,
-  and more revealing, advice.
+  and more revealing, advice. The LLM auditor is a 7B model, picked as the smallest of four
+  candidates that can read a raw record (`docs/decisions.md`). With yes/no scoring, the smaller
+  ones could not.
 - **The auditors give a lower bound.** What these auditors infer is a lower bound on what an
   observer could infer: a stronger auditor can only learn more. A per-answer filter that looks
   safe against them is not shown to be safe.

@@ -15,7 +15,7 @@ output was generated (commit `Freeze run config, label lists, ...`).
 
 | Topic | Decision | Why |
 |---|---|---|
-| Models | Twin: `HuggingFaceTB/SmolLM2-360M-Instruct` (demo), `SmolLM2-1.7B-Instruct` (full). The spec's example models were Qwen2.5; this release uses Apache-2.0 models from Hugging Face (SmolLM2) and AI2 (OLMo 2). Every model is pinned by commit hash and its licence was checked on the exact revision. | The spec asks for Apache-2.0 or MIT models that run on CPU and are configurable. |
+| Models | Twin: `HuggingFaceTB/SmolLM2-360M-Instruct` (demo), `SmolLM2-1.7B-Instruct` (full). LLM auditor: chosen by the pre-check below. The spec's example models were Qwen2.5; this release uses Apache-2.0 models from Hugging Face (SmolLM2) and AI2 (OLMo 2). Every model is pinned by commit hash and its licence was checked on the exact revision. | The spec asks for Apache-2.0 or MIT models that run on CPU and are configurable. |
 | Population | Adults aged 18 to 90, Massachusetts, Synthea `-r/-e 20260101`, living patients only. | The twin serves an adult consumer wellness app. A fixed reference date makes the output independent of the day it is generated. |
 | Synthea export | FHIR R4 collection bundles with only Patient, Condition, MedicationRequest, Encounter and Observation; hospital, practitioner and metadata exports switched off. | Those three exports carry wall-clock timestamps and would break byte-identical output. |
 | Profile | Active, unabated conditions with SNOMED tag `(disorder)`, plus `(finding)` codes that are not social or administrative (employment, education, housing and similar). Active medication requests, the 3 most recent encounters, latest values of 9 vital signs and labs. | The spec asks for clinical content. Social-history codes are not clinical diagnoses. |
@@ -25,7 +25,7 @@ output was generated (commit `Freeze run config, label lists, ...`).
 | Thresholding | A label counts as predicted present when its probability is strictly above 0.5. | The spec says "thresholded at 0.5" without saying which side 0.5 falls on. |
 | Wrong-person control | Each person gets another person's transcript from the same age band and sex (rotation within the stratum, sorted by id); the auditor is told the person's own demographics. Scored at the final turn. | Keeps the donor transcript plausible for the demographics the auditor sees. |
 | Control criteria | Empty transcript: \|mean gain at turn 0\| ≤ 5 points. Wrong person: mean gain ≤ 5 points. Full record: mean gain ≥ 50% of the mean headroom (headroom = 100 − baseline accuracy). | Written into `configs/demo.yaml` before any result. The wrong-person criterion is one-sided because an auditor that uses person-specific evidence is expected to do *worse* than the baseline on someone else's transcript; the control exists to catch spurious *positive* gain. |
-| LLM auditor prompt | Labels listed under short keys (C1..C10, M1..M6), answer pre-filled with `{`, robust JSON parsing, per-label fallback to the baseline value, counts reported. | Keeps the answer short on CPU; the spec asks for fallback and counting. |
+| LLM auditor prompt (JSON method) | Labels listed under short keys (C1..C10, M1..M6), answer pre-filled with `{`, robust JSON parsing, per-label fallback to the baseline value, counts reported. | Keeps the answer short; the spec asks for fallback and counting. Superseded as the default by the yes/no method, see below. |
 
 ## Changed after the smoke test, before any demo result
 
@@ -41,6 +41,32 @@ at scores. The smoke config is a test fixture, not a result.
 
 ## Selecting the LLM auditor (reference population only)
 
-See `scripts/auditor_precheck.py` and `docs/auditor_precheck.json`. The rule was written into the
-script before it was run. The rule: take the smallest candidate whose full-record gain on the first
-20 reference people reaches 50% of the mean headroom, with fewer than 20% unparseable answers.
+Script: `scripts/auditor_precheck.py`. The rule was written into the script before the first run:
+take the smallest candidate whose gain on the raw profile text of the first 20 **reference**
+people reaches 50% of their mean headroom, with fewer than 20% unusable answers. The target
+population was not touched. The candidates were SmolLM2-360M, OLMo-2-1B, SmolLM2-1.7B and
+OLMo-2-7B, all Apache-2.0.
+
+**Round 1: JSON answers, as in the spec** (`docs/auditor_precheck_json.json`). No candidate
+passed. Shares of headroom: −0.29, −0.15, −0.29, +0.17. The small models gave every label a
+low probability, and the 7B model gave every label a high one. The prompts were checked by
+reading them: the record text and the label list were present and correct. A keyword match on
+the same text would be nearly perfect, so the failure lies in the models' ability to do this
+task in this format.
+
+**Decision (with the author, after round 1):** score each label with one yes/no question, and
+read P(Yes) / (P(Yes) + P(No)) from the next-token distribution. Nothing is sampled or parsed. A
+label whose Yes+No probability mass is below 0.5 falls back to the baseline value and is
+counted. The text is encoded once per record, and the 16 questions are asked one at a time on a
+cropped copy of its key/value cache. This matches scoring each full prompt separately to within
+1e-5. The JSON method stays available (`auditors.llm.method: json`). This departs from the
+spec's "returning JSON probabilities". The change was committed before round 2 was run.
+
+**Round 2: yes/no** (`docs/auditor_precheck_yes_no.json`). Shares of headroom: −2.49 (360M
+answers "Yes" to everything), +0.39 (OLMo-2-1B), +0.24 (SmolLM2-1.7B), **+0.82 (OLMo-2-7B)**.
+OLMo-2-1124-7B-Instruct is the only candidate that passes, and it is the demo's LLM auditor.
+
+**Decision (with the author): assume a GPU.** A 7B model in float32 needs about 30 GB of
+memory, so the demo runs the twin and the LLM auditor on an NVIDIA GPU (`device: auto`). The spec's
+"laptop CPU" target is dropped for the LLM steps. On CUDA, deterministic kernels are switched
+on and TF32 is switched off (`hta.config.resolve_device`).

@@ -9,6 +9,6 @@
   "access_right": "open",
   "keywords": ["privacy", "digital health twin", "attribute inference", "synthetic data", "Synthea", "large language models", "reproducibility"],
   "related_identifiers": [
-    {"identifier": "https://github.com/Ryan-Tang-RU/health-twin-disclosure-audit", "relation": "isSupplementTo", "scheme": "url"}
+    {"identifier": "https://github.com/Tang-Lab-Rutgers/health-twin-disclosure-audit", "relation": "isSupplementTo", "scheme": "url"}
   ]
 }

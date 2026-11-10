@@ -10,7 +10,7 @@ authors:
     affiliation: "Rutgers University-New Brunswick"
 version: 0.1.0
 license: Apache-2.0
-repository-code: "https://github.com/Ryan-Tang-RU/health-twin-disclosure-audit"
+repository-code: "https://github.com/Tang-Lab-Rutgers/health-twin-disclosure-audit"
 keywords:
   - privacy
   - digital health twin
