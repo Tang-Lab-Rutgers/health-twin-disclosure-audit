@@ -612,6 +612,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "safetensors" },
     { name = "scikit-learn" },
+    { name = "scipy" },
     { name = "transformers" },
 ]
 
@@ -642,6 +643,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "safetensors", specifier = ">=0.4" },
     { name = "scikit-learn", specifier = "==1.7.2" },
+    { name = "scipy", specifier = ">=1.14" },
     { name = "torch", marker = "sys_platform == 'linux' and extra == 'gpu'", specifier = "==2.8.0", index = "https://download.pytorch.org/whl/cu128", conflict = { package = "health-twin-disclosure-audit", extra = "gpu" } },
     { name = "torch", marker = "extra == 'cpu'", specifier = "==2.8.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "health-twin-disclosure-audit", extra = "cpu" } },
     { name = "torchaudio", marker = "sys_platform == 'linux' and extra == 'gpu'", specifier = "==2.8.0", index = "https://download.pytorch.org/whl/cu128", conflict = { package = "health-twin-disclosure-audit", extra = "gpu" } },

@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 Ruixiang Tang
+# SPDX-License-Identifier: Apache-2.0
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lint-test-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6.1.0
+        with: {distribution: temurin, java-version: "17"}
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with: {version: "0.13.1"}
+      - name: Install locked environment
+        run: uv sync --locked --extra cpu
+      - name: Lint (ruff)
+        run: uv run ruff check src tests
+      - name: Licence check (reuse lint)
+        run: uv run reuse lint
+      - name: Unit tests
+        run: uv run pytest -q -m "not slow"
+      - name: Synthea determinism and end-to-end smoke test
+        run: uv run pytest -q -m slow -s
+      - name: Smoke run via the CLI
+        run: |
+          uv run python -m hta run --config configs/smoke.yaml
+          uv run python -m hta verify-all --run results/smoke
+      - name: Verify every committed expected score
+        run: |
+          if [ -d results/expected/per_person ]; then
+            uv run python -m hta verify-all --run results/expected
+          fi
+
+  docker-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Build image
+        run: docker build -t hta .
+      - name: Unit tests inside the image
+        run: docker run --rm hta make test
+
+  demo-in-docker:
+    # Manual: the full demo in the reference Docker image, uploaded as an artifact.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - run: docker build -t hta .
+      - run: mkdir -p out && docker run --rm -v "$PWD/out:/app/results" -v "$PWD/results/expected:/app/results/expected:ro" hta make demo || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with: {name: demo-results, path: out/demo}

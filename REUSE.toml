@@ -1,0 +1,21 @@
+version = 1
+
+# Files that cannot carry a comment header.
+[[annotations]]
+path = ["uv.lock"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Ruixiang Tang"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [".zenodo.json"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Ruixiang Tang"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Generated outputs (synthetic data, transcripts, scores, figures) are released under CC0-1.0.
+[[annotations]]
+path = ["results/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Ruixiang Tang"
+SPDX-License-Identifier = "CC0-1.0"

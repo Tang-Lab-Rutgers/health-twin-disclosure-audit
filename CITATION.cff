@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 Ruixiang Tang
+# SPDX-License-Identifier: CC0-1.0
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "health-twin-disclosure-audit: per-person cumulative disclosure from a filtered conversational health twin"
+type: software
+authors:
+  - family-names: Tang
+    given-names: Ruixiang
+    affiliation: "Rutgers University-New Brunswick"
+version: 0.1.0
+license: Apache-2.0
+repository-code: "https://github.com/Ryan-Tang-RU/health-twin-disclosure-audit"
+keywords:
+  - privacy
+  - digital health twin
+  - attribute inference
+  - synthetic data
+  - Synthea
+  - large language models
+  - reproducibility
+abstract: >-
+  A small, fully reproducible audit of a conversational health twin. Synthetic patients from
+  Synthea are served by a small open-weight language model that answers everyday questions from a
+  third-party wellness app. Every answer passes a per-answer privacy filter (identifier redaction
+  and a sensitive-term refusal). Fixed open auditors read the released transcript after every turn
+  and try to infer each person's conditions and medication classes. The repository measures, per
+  person, how far the auditors get beyond a demographics-only baseline as the conversation grows,
+  and lets anyone re-check any single person's score.

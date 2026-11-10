@@ -1,0 +1,14 @@
+{
+  "title": "health-twin-disclosure-audit: per-person cumulative disclosure from a filtered conversational health twin",
+  "upload_type": "software",
+  "description": "A small, fully reproducible audit of a conversational health twin on synthetic Synthea patients. A per-answer privacy filter is applied to every answer; fixed open auditors read the released transcript after every turn and try to infer each person's conditions and medication classes. The repository measures per-person cumulative disclosure over a demographics-only baseline and provides a command to re-check any single person's score. All data are synthetic; outputs are CC0-1.0, code is Apache-2.0.",
+  "creators": [
+    {"name": "Tang, Ruixiang", "affiliation": "Rutgers University-New Brunswick"}
+  ],
+  "license": "apache-2.0",
+  "access_right": "open",
+  "keywords": ["privacy", "digital health twin", "attribute inference", "synthetic data", "Synthea", "large language models", "reproducibility"],
+  "related_identifiers": [
+    {"identifier": "https://github.com/Ryan-Tang-RU/health-twin-disclosure-audit", "relation": "isSupplementTo", "scheme": "url"}
+  ]
+}
