@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Ruixiang Tang
+# SPDX-License-Identifier: Apache-2.0
+work/
+results/*
+!results/expected/
+.venv/
+__pycache__/
+*.pyc
+*.partial
+.pytest_cache/
+.ruff_cache/

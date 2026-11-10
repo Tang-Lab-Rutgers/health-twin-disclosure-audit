@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Ruixiang Tang
+# SPDX-License-Identifier: CC0-1.0
+#
+# Frozen synonym table for the sensitive-term filter, keyed by label id. If a person has a label,
+# these phrases are protected for that person in addition to the names of every condition and
+# medication in their profile. Matching is case-insensitive on whole words.
+# Written after the label lists were frozen and before any twin output was generated.
+cond_anemia: [anemia, anaemia, anemic, iron deficiency, low iron, low hemoglobin]
+cond_gingivitis: [gingivitis, gum disease, gum inflammation, bleeding gums]
+cond_essential_hypertension: [hypertension, high blood pressure, hypertensive]
+cond_chronic_sinusitis: [sinusitis, sinus infection, sinus infections]
+cond_ischemic_heart_disease: [ischemic heart disease, coronary artery disease, coronary heart disease, heart disease, angina]
+cond_metabolic_syndrome_x: [metabolic syndrome, insulin resistance]
+cond_hyperlipidemia: [hyperlipidemia, high cholesterol, dyslipidemia]
+cond_disorder_of_kidney_due_to_diabetes_mellitus: [diabetic kidney disease, diabetic nephropathy, kidney disease]
+cond_diabetes_mellitus_type_2: [diabetes, diabetic, type 2 diabetes]
+cond_hypertriglyceridemia: [hypertriglyceridemia, high triglycerides]
+med_antihypertensive: [blood pressure medication, blood pressure medicine, beta blocker, ace inhibitor, diuretic, water pill]
+med_statin: [statin, statins, cholesterol medication]
+med_antithrombotic: [blood thinner, blood thinners, anticoagulant, antiplatelet]
+med_opioid: [opioid, opioids, narcotic, narcotics]
+med_nsaid: [nsaid, nsaids]
+med_antihistamine_allergy: [antihistamine, antihistamines, epipen, allergy medication]

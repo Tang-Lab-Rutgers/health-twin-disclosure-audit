@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 Ruixiang Tang
+# SPDX-License-Identifier: CC0-1.0
+#
+# Candidate medication classes. `hta freeze-labels` keeps the most prevalent ones in the
+# reference population and writes them to configs/labels.yaml. A medication belongs to a class
+# if its RxNorm display text contains one of the keywords as a whole word (case-insensitive).
+# Written before any twin output was generated; do not edit after results exist.
+- id: med_antihypertensive
+  name: blood pressure or heart-rate medication
+  keywords: [lisinopril, enalapril, ramipril, losartan, valsartan, hydrochlorothiazide, chlorthalidone,
+             amlodipine, nifedipine, metoprolol, atenolol, carvedilol, propranolol, verapamil, diltiazem]
+- id: med_statin
+  name: cholesterol-lowering statin
+  keywords: [simvastatin, atorvastatin, rosuvastatin, pravastatin, lovastatin]
+- id: med_antidiabetic
+  name: diabetes medication
+  keywords: [metformin, insulin, glipizide, glyburide, glimepiride, liraglutide, semaglutide,
+             sitagliptin, canagliflozin, empagliflozin, dapagliflozin, pioglitazone, repaglinide]
+- id: med_antithrombotic
+  name: blood thinner or antiplatelet
+  keywords: [clopidogrel, prasugrel, ticagrelor, warfarin, apixaban, rivaroxaban, dabigatran,
+             heparin, enoxaparin, aspirin]
+- id: med_opioid
+  name: opioid pain medication
+  keywords: [oxycodone, hydrocodone, fentanyl, morphine, tramadol, codeine, hydromorphone,
+             meperidine, buprenorphine, methadone, tapentadol]
+- id: med_inhaled_respiratory
+  name: inhaled asthma or COPD medication
+  keywords: [albuterol, fluticasone, budesonide, salmeterol, formoterol, tiotropium, ipratropium,
+             beclomethasone, mometasone]
+- id: med_hormonal_contraceptive
+  name: hormonal contraceptive
+  keywords: [levonorgestrel, norethindrone, ethinyl, drospirenone, desogestrel, norgestimate,
+             etonogestrel, medroxyprogesterone, dienogest, nuvaring, mirena, kyleena, liletta,
+             nexplanon, jolivette, camila, errin]
+- id: med_antihistamine_allergy
+  name: allergy medication
+  keywords: [loratadine, cetirizine, fexofenadine, hydroxyzine, epinephrine]
+- id: med_nsaid
+  name: anti-inflammatory pain reliever (NSAID)
+  keywords: [ibuprofen, naproxen, meloxicam, celecoxib, diclofenac]
+- id: med_antidepressant
+  name: antidepressant
+  keywords: [sertraline, fluoxetine, citalopram, escitalopram, paroxetine, bupropion, venlafaxine,
+             duloxetine, trazodone, mirtazapine]

@@ -1,0 +1,225 @@
+# SPDX-FileCopyrightText: 2026 Ruixiang Tang
+# SPDX-License-Identifier: CC0-1.0
+#
+# Frozen attribute labels. Generated once by `python -m hta freeze-labels`; do not edit.
+frozen_from:
+  config: configs/demo.yaml
+  synthea_version: v4.0.0
+  population: reference
+  seed: 1002
+  clinician_seed: 2002
+  population_digest: b2893b527b7cafdfac9863139004cc5bd563c9206ea2c2ccbf57897527a06b03
+  n_reference: 200
+rule:
+  conditions: top 10 active SNOMED '(disorder)' names by prevalence, excluding names starting with 'Acute'
+  medication_classes: top 6 candidate classes from data/labels/medication_class_candidates.yaml by prevalence
+candidate_table:
+  conditions:
+  - name: Anemia
+    count: 94
+  - name: Gingivitis
+    count: 70
+  - name: Essential hypertension
+    count: 58
+  - name: Chronic sinusitis
+    count: 54
+  - name: Ischemic heart disease
+    count: 53
+  - name: Metabolic syndrome X
+    count: 36
+  - name: Hyperlipidemia
+    count: 35
+  - name: Disorder of kidney due to diabetes mellitus
+    count: 19
+  - name: Diabetes mellitus type 2
+    count: 16
+  - name: Hypertriglyceridemia
+    count: 16
+  - name: Microalbuminuria due to type 2 diabetes mellitus
+    count: 16
+  - name: Osteoporosis
+    count: 16
+  - name: Osteoarthritis of knee
+    count: 15
+  - name: Dependent drug abuse
+    count: 14
+  - name: Proteinuria due to type 2 diabetes mellitus
+    count: 14
+  - name: Recurrent urinary tract infection
+    count: 14
+  - name: Impacted molars
+    count: 13
+  - name: Chronic intractable migraine without aura
+    count: 12
+  - name: Chronic kidney disease stage 1
+    count: 10
+  - name: Adolescent idiopathic scoliosis
+    count: 9
+  - name: Alzheimer's disease
+    count: 9
+  - name: Polyp of colon
+    count: 9
+  - name: Chronic kidney disease stage 2
+    count: 8
+  - name: Seizure disorder
+    count: 8
+  - name: Sleep disorder
+    count: 8
+  - name: Chronic kidney disease stage 3
+    count: 6
+  - name: Hyperglycemia
+    count: 6
+  - name: Localized, primary osteoarthritis of the hand
+    count: 6
+  - name: Neuropathy due to type 2 diabetes mellitus
+    count: 6
+  - name: Sepsis
+    count: 6
+  medication_classes:
+  - id: med_antihypertensive
+    count: 85
+  - id: med_statin
+    count: 71
+  - id: med_antithrombotic
+    count: 58
+  - id: med_opioid
+    count: 34
+  - id: med_nsaid
+    count: 22
+  - id: med_antihistamine_allergy
+    count: 15
+  - id: med_antidiabetic
+    count: 14
+  - id: med_hormonal_contraceptive
+    count: 13
+  - id: med_inhaled_respiratory
+    count: 10
+  - id: med_antidepressant
+    count: 1
+conditions:
+- id: cond_anemia
+  name: Anemia
+  snomed_codes:
+  - '271737000'
+  reference_prevalence: 0.47
+- id: cond_gingivitis
+  name: Gingivitis
+  snomed_codes:
+  - '66383009'
+  reference_prevalence: 0.35
+- id: cond_essential_hypertension
+  name: Essential hypertension
+  snomed_codes:
+  - '59621000'
+  reference_prevalence: 0.29
+- id: cond_chronic_sinusitis
+  name: Chronic sinusitis
+  snomed_codes:
+  - '40055000'
+  reference_prevalence: 0.27
+- id: cond_ischemic_heart_disease
+  name: Ischemic heart disease
+  snomed_codes:
+  - '414545008'
+  reference_prevalence: 0.265
+- id: cond_metabolic_syndrome_x
+  name: Metabolic syndrome X
+  snomed_codes:
+  - '237602007'
+  reference_prevalence: 0.18
+- id: cond_hyperlipidemia
+  name: Hyperlipidemia
+  snomed_codes:
+  - '55822004'
+  reference_prevalence: 0.175
+- id: cond_disorder_of_kidney_due_to_diabetes_mellitus
+  name: Disorder of kidney due to diabetes mellitus
+  snomed_codes:
+  - '127013003'
+  reference_prevalence: 0.095
+- id: cond_diabetes_mellitus_type_2
+  name: Diabetes mellitus type 2
+  snomed_codes:
+  - '44054006'
+  reference_prevalence: 0.08
+- id: cond_hypertriglyceridemia
+  name: Hypertriglyceridemia
+  snomed_codes:
+  - '302870006'
+  reference_prevalence: 0.08
+medication_classes:
+- id: med_antihypertensive
+  name: blood pressure or heart-rate medication
+  keywords:
+  - lisinopril
+  - enalapril
+  - ramipril
+  - losartan
+  - valsartan
+  - hydrochlorothiazide
+  - chlorthalidone
+  - amlodipine
+  - nifedipine
+  - metoprolol
+  - atenolol
+  - carvedilol
+  - propranolol
+  - verapamil
+  - diltiazem
+  reference_prevalence: 0.425
+- id: med_statin
+  name: cholesterol-lowering statin
+  keywords:
+  - simvastatin
+  - atorvastatin
+  - rosuvastatin
+  - pravastatin
+  - lovastatin
+  reference_prevalence: 0.355
+- id: med_antithrombotic
+  name: blood thinner or antiplatelet
+  keywords:
+  - clopidogrel
+  - prasugrel
+  - ticagrelor
+  - warfarin
+  - apixaban
+  - rivaroxaban
+  - dabigatran
+  - heparin
+  - enoxaparin
+  - aspirin
+  reference_prevalence: 0.29
+- id: med_opioid
+  name: opioid pain medication
+  keywords:
+  - oxycodone
+  - hydrocodone
+  - fentanyl
+  - morphine
+  - tramadol
+  - codeine
+  - hydromorphone
+  - meperidine
+  - buprenorphine
+  - methadone
+  - tapentadol
+  reference_prevalence: 0.17
+- id: med_nsaid
+  name: anti-inflammatory pain reliever (NSAID)
+  keywords:
+  - ibuprofen
+  - naproxen
+  - meloxicam
+  - celecoxib
+  - diclofenac
+  reference_prevalence: 0.11
+- id: med_antihistamine_allergy
+  name: allergy medication
+  keywords:
+  - loratadine
+  - cetirizine
+  - fexofenadine
+  - hydroxyzine
+  - epinephrine
+  reference_prevalence: 0.075

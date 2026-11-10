@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: Apache-2.0
+[project]
+name = "health-twin-disclosure-audit"
+version = "0.1.0"
+description = "Measure cumulative attribute disclosure from a filtered conversational health twin, per person, on synthetic Synthea patients."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12,<3.13"
+authors = [{ name = "Ruixiang Tang" }]
+dependencies = [
+  "numpy>=2.1,<2.4",
+  "scikit-learn==1.7.2",
+  "pyyaml>=6.0.2",
+  "matplotlib>=3.9,<3.11",
+  "transformers==4.57.6",
+  "huggingface-hub>=0.34,<1.0",
+  "safetensors>=0.4",
+]
+
+[project.optional-dependencies]
+# Exactly one of these must be chosen: `uv sync --extra cpu` (default) or `--extra gpu`.
+cpu = ["torch==2.8.0"]
+gpu = [
+  "torch==2.8.0; sys_platform == 'linux'",
+  "torchvision==0.23.0; sys_platform == 'linux'",
+  "torchaudio==2.8.0; sys_platform == 'linux'",
+  "vllm==0.11.0; sys_platform == 'linux'",
+]
+
+[project.scripts]
+hta = "hta.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8.3,<9", "ruff==0.12.12", "reuse==5.1.1"]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hta"]
+
+[tool.uv]
+environments = ["sys_platform == 'darwin'", "sys_platform == 'linux'"]
+conflicts = [[{ extra = "cpu" }, { extra = "gpu" }]]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu128", extra = "gpu" },
+]
+torchvision = [{ index = "pytorch-cu128", extra = "gpu" }]
+torchaudio = [{ index = "pytorch-cu128", extra = "gpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: needs Java and network (Synthea download)"]
