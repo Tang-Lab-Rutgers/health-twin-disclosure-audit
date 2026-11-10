@@ -1,5 +1,5 @@
 {
-  "_config_hash": "e7d20a955f2842fccaaf0df8220da45a9ff5de9dddfd63c7e762686c2059bbe9",
+  "_config_hash": "0a5b42e7260ed4c0d015b437f68ea8831b4db5013809bc6a25223c0945ec93f8",
   "_config_path": "configs/demo.yaml",
   "auditors": {
     "api": {
@@ -40,6 +40,15 @@
     "empty_abs_max": 5.0,
     "full_record_min_frac_headroom": 0.5,
     "wrong_person_max": 5.0
+  },
+  "disclosure": {
+    "auditor_min": 0.8,
+    "baseline_max": 0.5,
+    "bits_clip": 1e-06,
+    "empty_max_share": 0.02,
+    "full_record_min_recall": 0.5,
+    "supported_min_share": 0.1,
+    "wrong_person_max_share": 0.02
   },
   "filter": {
     "redaction_token": "[REDACTED]",

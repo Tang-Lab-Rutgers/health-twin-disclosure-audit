@@ -23,15 +23,36 @@
       0.0
     ]
   },
-  "config_hash": "e7d20a955f2842fccaaf0df8220da45a9ff5de9dddfd63c7e762686c2059bbe9",
+  "config_hash": "0a5b42e7260ed4c0d015b437f68ea8831b4db5013809bc6a25223c0945ec93f8",
   "controls": {
     "full_record": {
+      "disclosed_labels": {
+        "lexical": [],
+        "llm": [
+          "cond_essential_hypertension",
+          "cond_metabolic_syndrome_x",
+          "cond_hyperlipidemia",
+          "cond_disorder_of_kidney_due_to_diabetes_mellitus",
+          "cond_diabetes_mellitus_type_2",
+          "cond_hypertriglyceridemia"
+        ]
+      },
       "gain": {
         "lexical": 12.5,
         "llm": 50.0
       }
     },
     "wrong_person": {
+      "disclosed_labels": {
+        "lexical": {
+          "filtered": [],
+          "unfiltered": []
+        },
+        "llm": {
+          "filtered": [],
+          "unfiltered": []
+        }
+      },
       "donor": "cc995869-355c-edf7-8a3e-4c0f6e0be9b2",
       "gain": {
         "lexical": {
@@ -50,6 +71,19 @@
   "demographics": {
     "age_band": "70-79",
     "sex": "female"
+  },
+  "disclosable_labels": [
+    "cond_essential_hypertension",
+    "cond_metabolic_syndrome_x",
+    "cond_hyperlipidemia",
+    "cond_disorder_of_kidney_due_to_diabetes_mellitus",
+    "cond_diabetes_mellitus_type_2",
+    "cond_hypertriglyceridemia"
+  ],
+  "disclosure_rule": {
+    "auditor_min": 0.8,
+    "baseline_max": 0.5,
+    "bits_clip": 1e-06
   },
   "labels": {
     "cond_anemia": 0,
@@ -89,6 +123,42 @@
             37.5
           ],
           "crossed": false,
+          "disclosure": {
+            "bits_gained": [
+              0.279923,
+              -4.077043,
+              -7.096008,
+              -5.996475,
+              -3.666919,
+              -5.84973,
+              -7.481542,
+              -5.002845,
+              -6.120544,
+              -5.46295,
+              -4.316571
+            ],
+            "bits_gained_by_label": {
+              "cond_anemia": -1.509316,
+              "cond_chronic_sinusitis": -1.310936,
+              "cond_diabetes_mellitus_type_2": -0.323334,
+              "cond_disorder_of_kidney_due_to_diabetes_mellitus": -0.041115,
+              "cond_essential_hypertension": -0.843149,
+              "cond_gingivitis": -4.1e-05,
+              "cond_hyperlipidemia": 0.233297,
+              "cond_hypertriglyceridemia": -0.323334,
+              "cond_ischemic_heart_disease": -0.39072,
+              "cond_metabolic_syndrome_x": -0.116397,
+              "med_antihistamine_allergy": -0.000147,
+              "med_antihypertensive": -0.037618,
+              "med_antithrombotic": 0.082765,
+              "med_nsaid": 0.196147,
+              "med_opioid": 0.073944,
+              "med_statin": -0.006617
+            },
+            "first_turn": null,
+            "labels": {},
+            "turn0_labels": []
+          },
           "first_crossing_turn": null,
           "gain": [
             0.0,
@@ -336,6 +406,42 @@
             "291f802be512d4a8137098796590ab69f8728a5dfe3f7ed7956d929cce761f28"
           ],
           "crossed": false,
+          "disclosure": {
+            "bits_gained": [
+              -52.295948,
+              -40.94938,
+              -29.455599,
+              -30.442669,
+              -38.890194,
+              -41.467497,
+              -40.153501,
+              -34.359037,
+              -41.184335,
+              -37.501979,
+              -45.246125
+            ],
+            "bits_gained_by_label": {
+              "cond_anemia": 1.577166,
+              "cond_chronic_sinusitis": 0.882116,
+              "cond_diabetes_mellitus_type_2": -0.842282,
+              "cond_disorder_of_kidney_due_to_diabetes_mellitus": -2.524723,
+              "cond_essential_hypertension": -3.728884,
+              "cond_gingivitis": -9.927387,
+              "cond_hyperlipidemia": -2.943632,
+              "cond_hypertriglyceridemia": -2.657168,
+              "cond_ischemic_heart_disease": -5.67267,
+              "cond_metabolic_syndrome_x": -8.080424,
+              "med_antihistamine_allergy": -0.013011,
+              "med_antihypertensive": -4.439815,
+              "med_antithrombotic": 1.302955,
+              "med_nsaid": 0.310059,
+              "med_opioid": 0.308744,
+              "med_statin": -8.797167
+            },
+            "first_turn": null,
+            "labels": {},
+            "turn0_labels": []
+          },
           "first_crossing_turn": null,
           "gain": [
             -12.5,
@@ -588,6 +694,42 @@
             37.5
           ],
           "crossed": false,
+          "disclosure": {
+            "bits_gained": [
+              0.09454,
+              -3.697054,
+              -6.976373,
+              -5.789532,
+              -3.776992,
+              -5.576687,
+              -7.256488,
+              -4.70735,
+              -5.866284,
+              -5.145986,
+              -4.034679
+            ],
+            "bits_gained_by_label": {
+              "cond_anemia": -1.692704,
+              "cond_chronic_sinusitis": -1.133868,
+              "cond_diabetes_mellitus_type_2": -0.201833,
+              "cond_disorder_of_kidney_due_to_diabetes_mellitus": -0.162076,
+              "cond_essential_hypertension": -0.940028,
+              "cond_gingivitis": -3.4e-05,
+              "cond_hyperlipidemia": 0.450779,
+              "cond_hypertriglyceridemia": -0.201833,
+              "cond_ischemic_heart_disease": -0.449407,
+              "cond_metabolic_syndrome_x": -0.07256,
+              "med_antihistamine_allergy": -0.000105,
+              "med_antihypertensive": -0.074533,
+              "med_antithrombotic": 0.150345,
+              "med_nsaid": 0.213158,
+              "med_opioid": 0.065377,
+              "med_statin": 0.014643
+            },
+            "first_turn": null,
+            "labels": {},
+            "turn0_labels": []
+          },
           "first_crossing_turn": null,
           "gain": [
             0.0,
@@ -835,6 +977,42 @@
             "9948b5d4e5c0adb5e78ea456401987fde084f8694bdbc1cfb39ab24fe7380dc3"
           ],
           "crossed": false,
+          "disclosure": {
+            "bits_gained": [
+              -52.295948,
+              -39.084888,
+              -34.469851,
+              -28.97055,
+              -36.970159,
+              -44.162466,
+              -42.764045,
+              -37.535436,
+              -46.993377,
+              -41.677334,
+              -46.841134
+            ],
+            "bits_gained_by_label": {
+              "cond_anemia": 1.579142,
+              "cond_chronic_sinusitis": 0.890055,
+              "cond_diabetes_mellitus_type_2": -0.823271,
+              "cond_disorder_of_kidney_due_to_diabetes_mellitus": -2.119787,
+              "cond_essential_hypertension": -3.71927,
+              "cond_gingivitis": -10.431531,
+              "cond_hyperlipidemia": -3.399077,
+              "cond_hypertriglyceridemia": -3.302637,
+              "cond_ischemic_heart_disease": -5.761064,
+              "cond_metabolic_syndrome_x": -8.049146,
+              "med_antihistamine_allergy": -0.009871,
+              "med_antihypertensive": -4.868592,
+              "med_antithrombotic": 1.305039,
+              "med_nsaid": 0.314072,
+              "med_opioid": 0.313808,
+              "med_statin": -8.759005
+            },
+            "first_turn": null,
+            "labels": {},
+            "turn0_labels": []
+          },
           "first_crossing_turn": null,
           "gain": [
             -12.5,

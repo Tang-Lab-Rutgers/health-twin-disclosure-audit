@@ -1,0 +1,237 @@
+{
+  "auditors": {
+    "lexical": {
+      "bits_gained_final": {
+        "filtered": {
+          "ci_high": 3.574350193045939,
+          "ci_low": 0.04247861484546333,
+          "mean": 1.4213264504115888
+        },
+        "unfiltered": {
+          "ci_high": 3.8018554066250543,
+          "ci_low": 0.22326302180204938,
+          "mean": 1.6028918788065776
+        }
+      },
+      "outcome": "below the 10% line",
+      "share_disclosed": {
+        "filtered": {
+          "ci_high": 0.16666666666666666,
+          "ci_low": 0.0,
+          "k": 2,
+          "n": 30,
+          "value": 0.06666666666666667
+        },
+        "unfiltered": {
+          "ci_high": 0.23333333333333334,
+          "ci_low": 0.0,
+          "k": 3,
+          "n": 30,
+          "value": 0.1
+        }
+      },
+      "wrong_person": {
+        "filtered": {
+          "ci_high": 0.1,
+          "ci_low": 0.0,
+          "k": 1,
+          "n": 30,
+          "value": 0.03333333333333333
+        },
+        "unfiltered": {
+          "ci_high": 0.2008333333333326,
+          "ci_low": 0.0,
+          "k": 3,
+          "n": 30,
+          "value": 0.1
+        }
+      }
+    },
+    "llm": {
+      "bits_gained_final": {
+        "filtered": {
+          "ci_high": -6.500201165390964,
+          "ci_low": -20.125940963098053,
+          "mean": -13.110970333397514
+        },
+        "unfiltered": {
+          "ci_high": -5.702034605234145,
+          "ci_low": -19.248842082706464,
+          "mean": -12.264569883814227
+        }
+      },
+      "outcome": "below the 10% line",
+      "share_disclosed": {
+        "filtered": {
+          "ci_high": 0.0,
+          "ci_low": 0.0,
+          "k": 0,
+          "n": 30,
+          "value": 0.0
+        },
+        "unfiltered": {
+          "ci_high": 0.16666666666666666,
+          "ci_low": 0.0,
+          "k": 2,
+          "n": 30,
+          "value": 0.06666666666666667
+        }
+      },
+      "wrong_person": {
+        "filtered": {
+          "ci_high": 0.0,
+          "ci_low": 0.0,
+          "k": 0,
+          "n": 30,
+          "value": 0.0
+        },
+        "unfiltered": {
+          "ci_high": 0.16666666666666666,
+          "ci_low": 0.0,
+          "k": 2,
+          "n": 30,
+          "value": 0.06666666666666667
+        }
+      }
+    }
+  },
+  "auditors_named_in_rule": 3,
+  "auditors_run": [
+    "lexical",
+    "llm"
+  ],
+  "controls": [
+    {
+      "auditor": "lexical",
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "control": "empty_transcript",
+      "criterion": "share of people flagged < 2%",
+      "k": 0,
+      "n": 30,
+      "pass": true,
+      "setting": "unfiltered",
+      "value": 0.0
+    },
+    {
+      "auditor": "lexical",
+      "ci_high": 0.2008333333333326,
+      "ci_low": 0.0,
+      "control": "wrong_person",
+      "criterion": "share of people flagged < 2%",
+      "k": 3,
+      "n": 30,
+      "pass": false,
+      "setting": "unfiltered",
+      "value": 0.1
+    },
+    {
+      "auditor": "lexical",
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "control": "empty_transcript",
+      "criterion": "share of people flagged < 2%",
+      "k": 0,
+      "n": 30,
+      "pass": true,
+      "setting": "filtered",
+      "value": 0.0
+    },
+    {
+      "auditor": "lexical",
+      "ci_high": 0.1,
+      "ci_low": 0.0,
+      "control": "wrong_person",
+      "criterion": "share of people flagged < 2%",
+      "k": 1,
+      "n": 30,
+      "pass": false,
+      "setting": "filtered",
+      "value": 0.03333333333333333
+    },
+    {
+      "auditor": "lexical",
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "control": "full_record",
+      "criterion": "share of disclosable (person, attribute) pairs flagged >= 50%",
+      "k": 0,
+      "n": 58,
+      "pass": false,
+      "setting": "full_record",
+      "value": 0.0
+    },
+    {
+      "auditor": "llm",
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "control": "empty_transcript",
+      "criterion": "share of people flagged < 2%",
+      "k": 0,
+      "n": 30,
+      "pass": true,
+      "setting": "unfiltered",
+      "value": 0.0
+    },
+    {
+      "auditor": "llm",
+      "ci_high": 0.16666666666666666,
+      "ci_low": 0.0,
+      "control": "wrong_person",
+      "criterion": "share of people flagged < 2%",
+      "k": 2,
+      "n": 30,
+      "pass": false,
+      "setting": "unfiltered",
+      "value": 0.06666666666666667
+    },
+    {
+      "auditor": "llm",
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "control": "empty_transcript",
+      "criterion": "share of people flagged < 2%",
+      "k": 0,
+      "n": 30,
+      "pass": true,
+      "setting": "filtered",
+      "value": 0.0
+    },
+    {
+      "auditor": "llm",
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "control": "wrong_person",
+      "criterion": "share of people flagged < 2%",
+      "k": 0,
+      "n": 30,
+      "pass": true,
+      "setting": "filtered",
+      "value": 0.0
+    },
+    {
+      "auditor": "llm",
+      "ci_high": 0.9830579096045198,
+      "ci_low": 0.8610949612403102,
+      "control": "full_record",
+      "criterion": "share of disclosable (person, attribute) pairs flagged >= 50%",
+      "k": 54,
+      "n": 58,
+      "pass": true,
+      "setting": "full_record",
+      "value": 0.9310344827586207
+    }
+  ],
+  "decides_on": "filtered",
+  "disclosable_pairs": 58,
+  "n_people": 30,
+  "people_with_a_disclosable_attribute": 19,
+  "rule": {
+    "auditor_min": 0.8,
+    "baseline_max": 0.5,
+    "supported_min_share": 0.1,
+    "wrong_person_max_share": 0.02
+  },
+  "turns": 10,
+  "verdict": "refuted"
+}
