@@ -15,6 +15,7 @@ from .auditors.base import audit_record, render_transcript
 from .auditors.baseline import BaselineAuditor, fit_baseline
 from .auditors.lexical import LexicalModel, fit_lexical
 from .auditors.llm import LLMAuditor
+from .auditors.yesno import YesNoAuditor
 from .config import (
     read_json,
     run_dir,
@@ -34,6 +35,16 @@ SETTINGS = ["unfiltered", "filtered"]
 
 
 # ------------------------------------------------------------------ helpers
+
+
+def make_llm_auditor(acfg: dict, labels_cfg: dict, baseline, cache_path: Path):
+    """`yes_no` (default): per-label Yes/No probability. `json`: one JSON answer per record."""
+    method = acfg.get("method", "yes_no")
+    if method == "yes_no":
+        return YesNoAuditor(acfg, labels_cfg, baseline, cache_path)
+    if method == "json":
+        return LLMAuditor(acfg, labels_cfg, baseline, cache_path)
+    raise ValueError(f"unknown auditors.llm.method {method!r}")
 
 
 def transcript_path(rd: Path, population: str, setting: str, pid: str) -> Path:
@@ -199,14 +210,14 @@ def score_tasks(cfg: dict, tasks: list[dict], rd: Path, models: dict) -> tuple[d
                        "model_sha256": {s: models[f"lexical_{s}.json"] for s in lex}}
     acfg = cfg["auditors"]["llm"]
     if acfg.get("enabled"):
-        aud = LLMAuditor(acfg, cfg["labels"], baseline, rd / "cache" / "llm_auditor.jsonl")
+        aud = make_llm_auditor(acfg, cfg["labels"], baseline, rd / "cache" / "llm_auditor.jsonl")
         p, details = aud.predict(recs, return_details=True)
         probs["llm"] = p
         for t, d in zip(tasks, details, strict=True):
             t["llm"] = {"cache_key": d["key"], "parse_status": d["status"]}
         info["llm"] = {"model": acfg["model"], "revision": acfg["revision"],
                        "backend": acfg.get("backend", "transformers"),
-                       "parse": aud.stats}
+                       "method": acfg.get("method", "yes_no"), "parse": aud.stats}
     if api_enabled(cfg["auditors"]["api"]):
         probs["api"] = APIAuditor(cfg["auditors"]["api"], cfg["labels"], baseline).predict(recs)
         info["api"] = {"provider": cfg["auditors"]["api"]["provider"],

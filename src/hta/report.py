@@ -160,12 +160,14 @@ def write_all(cfg, rd: Path, target, tasks, res, controls, info, donors, filter_
             n=st["answers"], note=f"answers that hit max_new_tokens={cfg['twin']['max_new_tokens']}")
     if "llm" in info:
         ps = info["llm"]["parse"]
-        add("llm_parse", "llm", "", "failed_answer_rate", ps["failed"] / max(ps["calls"], 1),
-            n=ps["calls"], note="no usable number at all; every label fell back to the baseline")
-        add("llm_parse", "llm", "", "partial_answer_rate", ps["partial"] / max(ps["calls"], 1),
-            n=ps["calls"])
+        if "calls" in ps:  # json method
+            add("llm_parse", "llm", "", "failed_answer_rate", ps["failed"] / max(ps["calls"], 1),
+                n=ps["calls"], note="no usable number at all; every label fell back to the baseline")
+            add("llm_parse", "llm", "", "partial_answer_rate", ps["partial"] / max(ps["calls"], 1),
+                n=ps["calls"])
         add("llm_parse", "llm", "", "label_fallback_rate",
-            ps["labels_fallback"] / max(ps["labels_total"], 1), n=ps["labels_total"])
+            ps["labels_fallback"] / max(ps["labels_total"], 1), n=ps["labels_total"],
+            note="labels that fell back to the baseline value")
     with open(rd / "summary.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
@@ -208,7 +210,7 @@ def write_all(cfg, rd: Path, target, tasks, res, controls, info, donors, filter_
                     ae["model_file"] = info["lexical"]["model_files"][s]
                     ae["model_sha256"] = info["lexical"]["model_sha256"][s]
                 elif a == "llm":
-                    ae.update({k: info["llm"][k] for k in ("model", "revision", "backend")})
+                    ae.update({k: info["llm"][k] for k in ("model", "revision", "backend", "method")})
                     ae["parse_status"] = [task_llm[(pid, s, "main", t)]["parse_status"]
                                           for t in range(T + 1)]
                     ae["cache_keys"] = [task_llm[(pid, s, "main", t)]["cache_key"]
@@ -282,10 +284,10 @@ def write_report_md(cfg, rd, res, controls, summaries, filter_stats, info) -> No
                      f"{st['truncated'] / a:.1%} hit the token limit.")
     if "llm" in info:
         ps = info["llm"]["parse"]
-        lines += ["", "## LLM auditor parsing", "",
-                  f"{ps['calls']} prompts scored: {ps['ok']} parsed fully, {ps['partial']} partly, "
-                  f"{ps['failed']} not at all. {ps['labels_fallback']} of {ps['labels_total']} "
-                  f"label values fell back to the baseline."]
+        lines += ["", "## LLM auditor", "",
+                  f"Model `{info['llm']['model']}` (revision `{info['llm']['revision'][:12]}`), method "
+                  f"`{info['llm']['method']}`. {ps['labels_fallback']} of {ps['labels_total']} label "
+                  "values fell back to the baseline (unanswered or unparseable)."]
     lines += ["", f"## Per-label AUROC at turn {T} (filtered setting)", "",
               "| Label | " + " | ".join(res["auditors"]) + " |",
               "|---|" + "---|" * len(res["auditors"])]

@@ -45,6 +45,8 @@ auditors:
     min_df: 2
     C: 1.0
   llm:
+    method: yes_no             # yes_no: per-label P(Yes) | json: one JSON answer per record
+    min_mass: 0.5              # yes_no: a label whose P(Yes)+P(No) is below this falls back to baseline
     enabled: false
     backend: transformers
     model: HuggingFaceTB/SmolLM2-360M-Instruct

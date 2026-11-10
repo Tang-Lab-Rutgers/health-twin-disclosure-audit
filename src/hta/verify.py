@@ -10,10 +10,10 @@ What is checked, in order:
   2. the run config and the auditor model files are the ones the report names (SHA256);
   3. for every turn, the baseline and lexical-auditor accuracy and gain, recomputed from the
      transcript, equal the stored values exactly;
-  4. the LLM auditor's stored raw answers are re-parsed and its gain recomputed (exact);
+  4. the LLM auditor's stored scores (Yes/No probabilities, or raw JSON answers) are turned into
+     probabilities again and its gain recomputed (exact);
   5. optionally (--rerun-llm), the LLM auditor is run again on the transcript. This is reported,
-     not required to match: batched generation pads prompts, and padding or a different CPU can
-     change floating-point sums enough to flip a greedy token.
+     not required to match: a different CPU can change floating-point sums slightly.
 """
 
 from __future__ import annotations
@@ -89,29 +89,38 @@ def verify(person_file: str, transcript_file: str, rerun_llm: bool = False) -> i
 
     llm = entry["auditors"].get("llm")
     if llm:
-        from .auditors.llm import label_keys, parse_answer
+        from .pipeline import make_llm_auditor
 
         cache = {r["key"]: r for r in read_jsonl(rd / llm["cache_file"])}
-        short = [k for _, k, _ in label_keys(cfg["labels"])]
-        prior = base.prior(person["demographics"]["age_band"], person["demographics"]["sex"])
         probs = []
-        for key in llm["cache_keys"]:
-            vals, _ = parse_answer("{" + cache[key]["text"], short)
-            probs.append([vals.get(k, prior[j]) for j, k in enumerate(short)])
+        if llm.get("method", "yes_no") == "yes_no":
+            from .auditors.yesno import YesNoAuditor
+
+            yn = YesNoAuditor.__new__(YesNoAuditor)  # only the stored-score path, no model
+            yn.baseline, yn.min_mass = base, float(cfg["auditors"]["llm"].get("min_mass", 0.5))
+            for key, rec in zip(llm["cache_keys"], records, strict=True):
+                probs.append(yn.to_probs(rec, cache[key])[0])
+        else:
+            from .auditors.llm import label_keys, parse_answer
+
+            short = [k for _, k, _ in label_keys(cfg["labels"])]
+            prior = base.prior(person["demographics"]["age_band"], person["demographics"]["sex"])
+            for key in llm["cache_keys"]:
+                vals, _ = parse_answer("{" + cache[key]["text"], short)
+                probs.append([vals.get(k, prior[j]) for j, k in enumerate(short)])
         acc = person_accuracy(np.array(probs), np.repeat(y, T + 1, axis=0), thr)
         g = [_r(v) for v in acc - base_acc]
         check(f"LLM gain from stored raw answers, turns 0..{T}", g == llm["gain"],
               "recomputed " + " ".join(f"{v:+.1f}" for v in g))
         if rerun_llm:
-            from .auditors.llm import LLMAuditor
-
-            aud = LLMAuditor(cfg["auditors"]["llm"], cfg["labels"], base,
-                             rd / "cache" / "verify_rerun_llm.jsonl")
-            outs = aud.gen.generate([aud.prompt(r) for r in records])
-            new = {aud.gen.key(p): o["text"] for p, o in outs.items()}
-            same = sum(new.get(k) == cache[k]["text"] for k in llm["cache_keys"])
-            print(f"  [INFO] re-ran the LLM auditor: {same} of {len(llm['cache_keys'])} raw answers "
-                  "identical to the stored ones (see docstring for why they may differ)")
+            fresh = rd / "cache" / "verify_rerun_llm.jsonl"
+            fresh.unlink(missing_ok=True)
+            aud = make_llm_auditor(cfg["auditors"]["llm"], cfg["labels"], base, fresh)
+            p2 = aud.predict(records)
+            d = float(np.abs(p2 - np.array(probs)).max())
+            g2 = [_r(v) for v in person_accuracy(p2, np.repeat(y, T + 1, axis=0), thr) - base_acc]
+            print(f"  [INFO] re-ran the LLM auditor: max probability difference {d:.2e}; "
+                  f"gain identical at {sum(a == b for a, b in zip(g2, g, strict=True))} of {T + 1} turns")
 
     stored = entry["auditors"]["lexical"]
     print(f"Lexical auditor, {setting}: final gain {stored['gain'][-1]:+.1f} points, "

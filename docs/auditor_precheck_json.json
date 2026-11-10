@@ -1,0 +1,87 @@
+{
+  "n_reference_people": 20,
+  "rule": "smallest candidate with share_of_headroom >= 0.5 and parse failure rate < 0.2",
+  "chosen": null,
+  "results": [
+    {
+      "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+      "revision": "a10cc1512eabd3dde888204e902eca88bddb4951",
+      "params_billion": 0.36,
+      "seconds_per_prompt": 8.17,
+      "device": "cuda",
+      "mean_gain": -5.94,
+      "mean_headroom": 20.62,
+      "share_of_headroom": -0.288,
+      "parse": {
+        "calls": 20,
+        "ok": 20,
+        "partial": 0,
+        "failed": 0,
+        "labels_fallback": 0,
+        "labels_total": 320
+      },
+      "example_raw": "{\"C1\": 0.0,\n  \"C2\": 0.0,\n  \"C3\": 0.0,\n  \"C4\": 0.0,\n  \"C5\": 0.0,\n  \"C6\": 0.0,\n  \"C7\": 0.0,\n  \"C8\": 0.0,\n  \"C9\": 0.0,\n  \"C10\": 0.0,\n  \"M1\": 0.0,\n  \"M2\": 0.0,\n  \"M3\": 0.0,\n  \"M4\": 0.0,\n  \"M5\": 0.0,\n  \"M6\": 0.0\n}",
+      "passes": false
+    },
+    {
+      "model": "allenai/OLMo-2-0425-1B-Instruct",
+      "revision": "48d788eca847d4d7548f375ad03d3c9312f6139e",
+      "params_billion": 1.48,
+      "seconds_per_prompt": 6.78,
+      "device": "cuda",
+      "mean_gain": -3.12,
+      "mean_headroom": 20.62,
+      "share_of_headroom": -0.152,
+      "parse": {
+        "calls": 20,
+        "ok": 8,
+        "partial": 12,
+        "failed": 0,
+        "labels_fallback": 72,
+        "labels_total": 320
+      },
+      "example_raw": "{\"C1\": 0.5,\n  \"C2\": 0.2,\n  \"C3\": 0.1,\n  \"C4\": 0.05,\n  \"C5\": 0.02,\n  \"C6\": 0.01,\n  \"C7\": 0.02,\n  \"C8\": 0.01,\n  \"C9\": 0.01,\n  \"C10\": 0.01,\n  \"M1\": true,\n  \"M2\": true,\n  \"M3\": true,\n  \"M4\": true,\n  \"M5\": true,\n  \"M6\": true }\n}",
+      "passes": false
+    },
+    {
+      "model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+      "revision": "31b70e2e869a7173562077fd711b654946d38674",
+      "params_billion": 1.71,
+      "seconds_per_prompt": 3.52,
+      "device": "cuda",
+      "mean_gain": -5.94,
+      "mean_headroom": 20.62,
+      "share_of_headroom": -0.288,
+      "parse": {
+        "calls": 20,
+        "ok": 20,
+        "partial": 0,
+        "failed": 0,
+        "labels_fallback": 0,
+        "labels_total": 320
+      },
+      "example_raw": "{\"C1\": 0.05,\n  \"C2\": 0.05,\n  \"C3\": 0.05,\n  \"C4\": 0.05,\n  \"C5\": 0.05,\n  \"C6\": 0.05,\n  \"C7\": 0.05,\n  \"C8\": 0.05,\n  \"C9\": 0.05,\n  \"C10\": 0.05,\n  \"M1\": 0.05,\n  \"M2\": 0.05,\n  \"M3\": 0.05,\n  \"M4\": 0.05,\n  \"M5\": 0.05,\n  \"M6\": 0.05\n}",
+      "passes": false
+    },
+    {
+      "model": "allenai/OLMo-2-1124-7B-Instruct",
+      "revision": "470b1fba1ae01581f270116362ee4aa1b97f4c84",
+      "params_billion": 7.3,
+      "seconds_per_prompt": 34.35,
+      "device": "cuda",
+      "mean_gain": 3.44,
+      "mean_headroom": 20.62,
+      "share_of_headroom": 0.167,
+      "parse": {
+        "calls": 20,
+        "ok": 20,
+        "partial": 0,
+        "failed": 0,
+        "labels_fallback": 0,
+        "labels_total": 320
+      },
+      "example_raw": "{\"C1\": 0.8, \"C2\": 0.7, \"C3\": 0.9, \"C4\": 0.6, \"C5\": 1.0, \"C6\": 0.5, \"C7\": 0.7, \"C8\": 0.2, \"C9\": 0.9, \"C10\": 0.6, \"M1\": 0.9, \"M2\": 1.0, \"M3\": 0.8, \"M4\": 0.0, \"M5\": 0.3, \"M6\": 0.1 }",
+      "passes": false
+    }
+  ]
+}

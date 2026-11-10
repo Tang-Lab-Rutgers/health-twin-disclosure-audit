@@ -10,7 +10,9 @@ control uses: mean gain over the demographics-only baseline as a share of the me
         --device cuda --out docs/auditor_precheck.json
 
 The rule, fixed before running: take the smallest candidate whose share is >= 0.5 and whose
-whole-answer parse failure rate is < 20%.
+unusable-answer rate is < 20% (json: answers with no usable number; yes_no: labels whose Yes+No
+probability mass is below min_mass). First run: --method json (all four failed, see
+docs/auditor_precheck_json.json). Second run: --method yes_no.
 """
 
 from __future__ import annotations
@@ -24,8 +26,8 @@ import numpy as np
 
 from hta.auditors.base import audit_record
 from hta.auditors.baseline import BaselineAuditor, fit_baseline
-from hta.auditors.llm import LLMAuditor
 from hta.config import load_config, read_jsonl
+from hta.pipeline import make_llm_auditor
 from hta.profiles import label_ids, render_profile
 
 CANDIDATES = [
@@ -44,6 +46,7 @@ def main() -> None:
     ap.add_argument("--batch-size", type=int, default=4)
     ap.add_argument("--n", type=int, default=20)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--method", default="yes_no", choices=["yes_no", "json"])
     args = ap.parse_args()
     cfg = load_config(args.config)
     ref = read_jsonl(args.profiles)
@@ -57,8 +60,9 @@ def main() -> None:
     results = []
     for model, rev, size_b in CANDIDATES:
         acfg = dict(cfg["auditors"]["llm"], model=model, revision=rev, device=args.device,
-                    batch_size=args.batch_size)
-        aud = LLMAuditor(acfg, cfg["labels"], base, Path(args.out).with_suffix(f".{model.split('/')[1]}.jsonl"))
+                    batch_size=args.batch_size, method=args.method)
+        cache = Path(args.out).with_suffix(f".{model.split('/')[1]}.jsonl")
+        aud = make_llm_auditor(acfg, cfg["labels"], base, cache)
         t0 = time.time()
         probs, det = aud.predict(recs, return_details=True)
         acc = ((probs > thr) == y).mean(1) * 100
@@ -67,13 +71,18 @@ def main() -> None:
              "seconds_per_prompt": round((time.time() - t0) / len(recs), 2), "device": args.device,
              "mean_gain": round(gain, 2), "mean_headroom": round(head, 2),
              "share_of_headroom": round(gain / head, 3),
-             "parse": aud.stats, "example_raw": det[0]["raw"][:300]}
-        r["passes"] = r["share_of_headroom"] >= 0.5 and aud.stats["failed"] / len(recs) < 0.2
+             "method": args.method, "parse": aud.stats, "example_raw": det[0]["raw"][:300]}
+        if args.method == "json":
+            unusable = aud.stats["failed"] / len(recs)
+        else:
+            unusable = aud.stats["labels_fallback"] / max(aud.stats["labels_total"], 1)
+        r["unusable_rate"] = round(unusable, 3)
+        r["passes"] = r["share_of_headroom"] >= 0.5 and unusable < 0.2
         print(json.dumps(r), flush=True)
         results.append(r)
     chosen = next((r["model"] for r in results if r["passes"]), None)
-    Path(args.out).write_text(json.dumps({"n_reference_people": len(sample), "rule":
-        "smallest candidate with share_of_headroom >= 0.5 and parse failure rate < 0.2",
+    Path(args.out).write_text(json.dumps({"n_reference_people": len(sample), "method": args.method, "rule":
+        "smallest candidate with share_of_headroom >= 0.5 and unusable rate < 0.2",
         "chosen": chosen, "results": results}, indent=2) + "\n")
     print("chosen:", chosen)
 
