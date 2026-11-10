@@ -8,9 +8,9 @@ sampled and nothing is parsed. A label whose Yes+No probability mass is below `m
 counted as unanswered and falls back to the baseline value.
 
 The released text comes first in the prompt and the label question last, so the text is encoded
-once per record and its key/value cache is shared by the 16 label questions. Each record is
-scored on its own (batch of one for the text, a fixed batch of the 16 questions), so the result
-for a record never depends on which other records are scored with it.
+once per record and its key/value cache is reused by the 16 label questions, one after another
+(the cache is cropped back to the text after each). Everything runs at batch size one, so the
+score of a record never depends on which other records are scored, and memory stays small.
 """
 
 from __future__ import annotations
@@ -117,29 +117,19 @@ class YesNoAuditor:
         head, suffixes = self.prompt_parts(record)
         dev = model.device
         head_ids = tok(head, return_tensors="pt", add_special_tokens=False).input_ids.to(dev)
-        suf = [tok(s, add_special_tokens=False).input_ids for s in suffixes]
-        n, width, hl = len(suf), max(len(s) for s in suf), head_ids.shape[1]
-        pad = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
-        ids = torch.full((n, width), pad, dtype=torch.long)
-        mask = torch.zeros((n, hl + width), dtype=torch.long)
-        mask[:, :hl] = 1
-        for i, s in enumerate(suf):  # right padding: pads come after the read position
-            ids[i, :len(s)] = torch.tensor(s)
-            mask[i, hl:hl + len(s)] = 1
-        pos = (hl + torch.arange(width)).unsqueeze(0).expand(n, -1)
+        hl = head_ids.shape[1]
+        p_yes, p_no = [], []
         with torch.inference_mode():
-            out = model(head_ids, use_cache=True)
-            cache = out.past_key_values
-            cache.batch_repeat_interleave(n)
-            logits = model(ids.to(dev), attention_mask=mask.to(dev), position_ids=pos.to(dev),
-                           past_key_values=cache, use_cache=True).logits
-        last = torch.tensor([len(s) - 1 for s in suf])
-        probs = torch.softmax(logits[torch.arange(n), last].float(), dim=-1).cpu()
-        p_yes = probs[:, self._ids["yes"]].sum(-1).double().numpy()
-        p_no = probs[:, self._ids["no"]].sum(-1).double().numpy()
-        mass = p_yes + p_no
-        return {"p_yes": [float(v) for v in p_yes / np.maximum(mass, 1e-12)],
-                "mass": [float(v) for v in mass]}
+            cache = model(head_ids, use_cache=True).past_key_values
+            for s in suffixes:  # one question at a time; the cache is trimmed back to the text
+                ids = tok(s, return_tensors="pt", add_special_tokens=False).input_ids.to(dev)
+                logits = model(ids, past_key_values=cache, use_cache=True).logits[0, -1]
+                cache.crop(hl)
+                pr = torch.softmax(logits.float(), dim=-1).cpu().double()
+                p_yes.append(float(pr[self._ids["yes"]].sum()))
+                p_no.append(float(pr[self._ids["no"]].sum()))
+        mass = [y + n for y, n in zip(p_yes, p_no, strict=True)]
+        return {"p_yes": [y / max(m, 1e-12) for y, m in zip(p_yes, mass, strict=True)], "mass": mass}
 
     def scores(self, records: list[dict]) -> list[dict]:
         keys = [self.key(r) for r in records]
