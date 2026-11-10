@@ -511,7 +511,8 @@ def rescore(run_path: str, config_path: str) -> int:
     report.write_all(cfg, rd, target, tasks, res, controls, decision, info, donors,
                      manifest["filter"], manifest["synthea"]["population_digests"], models,
                      manifest["timings"], environment=manifest["environment"],
-                     rescore={"from_config_hash": old["_config_hash"],
+                     rescore={"generated_with_config_hash": manifest.get("rescore", {}).get(
+                                  "generated_with_config_hash", manifest["config_hash"]),
                               "note": "metrics recomputed from the stored transcripts, auditor "
                                       "model files and LLM-auditor score cache; nothing upstream "
                                       "was re-run",

@@ -54,11 +54,12 @@ def plot_disclosure(cfg: dict, res: dict, decision: dict, out_dir: Path) -> None
     top = max(line, ceiling)
     for ax, s in zip(axes, SETTINGS, strict=True):
         ax.set_facecolor(SURFACE)
-        ax.axhline(0, color=GRID, lw=1, zorder=1)
-        ax.axhline(line, color=INK_2, lw=1, ls=(0, (4, 3)), zorder=1)
+        x0, x1 = 0.7, T + 0.15  # reference lines stop before the end labels
+        ax.hlines(0, x0, x1, color=GRID, lw=1, zorder=1)
+        ax.hlines(line, x0, x1, color=INK_2, lw=1, ls=(0, (4, 3)), zorder=1)
         ax.text(1.0, line, f"{line:.0f}% support line", color=INK_2, fontsize=8.5,
                 va="bottom", ha="left")
-        ax.axhline(ceiling, color=INK_2, lw=1, ls=(0, (1, 2)), zorder=1)
+        ax.hlines(ceiling, x0, x1, color=INK_2, lw=1, ls=(0, (1, 2)), zorder=1)
         ax.text(1.0, ceiling, f"ceiling: {decision['people_with_a_disclosable_attribute']} of {n} "
                 "people have an attribute that can count", color=INK_2, fontsize=8.5,
                 va="bottom", ha="left")
@@ -93,10 +94,10 @@ def plot_disclosure(cfg: dict, res: dict, decision: dict, out_dir: Path) -> None
                bbox_to_anchor=(0.5, -0.01), labelcolor=INK)
     fig.suptitle(f"People with a disclosed attribute by turn, {n} synthetic people, 95% bootstrap CI",
                  x=0.01, ha="left", color=INK, fontsize=11.5)
-    fig.text(0.01, 0.905, f"Disclosed: an auditor gives an attribute the person has p \u2265 "
+    fig.text(0.01, 0.915, f"Disclosed: an auditor gives an attribute the person has p \u2265 "
              f"{dc['auditor_min']} while the age-and-sex baseline gives it p < {dc['baseline_max']}",
              ha="left", color=INK_2, fontsize=9)
-    fig.tight_layout(rect=(0, 0.07, 1, 0.9))
+    fig.tight_layout(rect=(0, 0.07, 1, 0.93))
     fig.savefig(out_dir / "disclosure.png", dpi=200, facecolor=SURFACE)
     fig.savefig(out_dir / "disclosure.pdf", facecolor=SURFACE, metadata={"CreationDate": None})
     plt.close(fig)
