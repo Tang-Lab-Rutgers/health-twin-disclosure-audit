@@ -34,7 +34,7 @@
     "seed": 7
   },
   "config": "configs/demo.yaml",
-  "config_hash": "0a5b42e7260ed4c0d015b437f68ea8831b4db5013809bc6a25223c0945ec93f8",
+  "config_hash": "89ffb2b26f2c82c8716a84a7a580102c6dd473f5546848e07cdbbc31049b4bb5",
   "environment": {
     "cpu_count": 128,
     "git": {
@@ -88,7 +88,7 @@
     "environment": {
       "cpu_count": 12,
       "git": {
-        "commit": "dad214823dd2af783703b388e4b12036355f070a",
+        "commit": "0c167e935c054445888a8b0a1a3fe4a08f9e0734",
         "dirty": false
       },
       "gpu": null,

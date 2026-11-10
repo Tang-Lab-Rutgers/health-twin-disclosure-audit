@@ -39,6 +39,7 @@ All data are synthetic.
   SHA256 to its transcript, to the run config and to the auditor model files.
   - `hta verify` recomputes a person's score from the transcript in seconds, on a laptop.
   - CI re-verifies all 60 committed person-setting scores on every push.
+  - `make check` does the same on a laptop CPU in about a minute, with no GPU or model download.
   - On a second machine, all 60 reproduced exactly.
   - Editing one word of a transcript makes the check fail.
 - **Fixed before the results, with a dated decision log.** The labels, synonym table, question
@@ -136,9 +137,10 @@ that little was disclosed.** That is the main finding of this preliminary run.
 - **The ceiling.** 19 of the 30 people have at least one attribute that can count: one they
   have and that the baseline gives less than 0.5. That makes 58 (person, attribute) pairs, so no
   auditor could exceed 63%.
-- **By the application's rule, this run reads as refuted:** both auditors stay below 10% on
-  filtered transcripts. The rule names three auditors and 20 turns. This run has two auditors
-  (the commercial one is off) and 10 turns, so the verdict describes the demo, not the claim.
+- **No verdict: not decided.** The application's rule assumes three auditors, 20 turns and
+  controls that pass. This run has two auditors (the commercial one is off) and 10 turns, and
+  four controls failed. Both auditors stay below 10% on filtered transcripts, but that reading
+  does not count against the claim. The report lists each unmet condition.
 - **Lexical auditor, full-record control: failed.** Reading the raw profile, it flags none of
   the 58 attributes that can count. Its readings on transcripts are therefore not evidence of
   little disclosure.
@@ -174,18 +176,18 @@ that little was disclosed.** That is the main finding of this preliminary run.
 The failed controls limit what the disclosure numbers can say. They do not limit the following
 observations, each of which can be read off the committed files:
 
-- **Telling the twin not to reveal identifiers does not work.** The system prompt says not to
-  reveal identifying details. Even so, 127 of the 300 unfiltered answers (42%) addressed the
-  person by name. All 127 redactions were the person's own name; no other identifier and no
+- **In this run, telling the twin not to reveal identifiers did not keep names out (127 of 300
+  answers).** The system prompt says not to reveal identifying details. Even so, 127 of the 300
+  unfiltered answers (42%) from this 360M-parameter twin addressed the person by name. All 127 redactions were the person's own name; no other identifier and no
   generic pattern was hit. The filter, not the prompt, is what kept names out of the released
   text. (This breakdown was computed from the committed transcripts after the run; nothing was
   rerun.)
-- **A per-answer filter leaks through its own refusals.** The filter refuses an answer only if
-  it names one of *this person's* conditions or medications. So whether an answer is refused
+- **A per-answer filter can leak through its own refusals.** The filter refuses an answer only
+  if it names one of *this person's* conditions or medications. So whether an answer is refused
   depends on the private record. For example, an answer that mentions "diuretic" is refused only
-  for people who take a blood-pressure medication. A refusal is therefore a signal in its own
-  right, and it adds up over turns. That is exactly the cumulative, per-person leak this
-  repository is built to measure.
+  for people who take a blood-pressure medication. A refusal can therefore be a signal in its
+  own right, adding up over turns. This run does not measure how much it leaks; that cumulative,
+  per-person leak is what this repository is built to measure.
 - **Without the prior, leakage looks larger than it is.** Several labels reach AUROC 0.9 or
   higher from age and sex alone. Counting an attribute only where the stated prior gives it less
   than 0.5, per person, keeps this from being counted as something the twin revealed.
@@ -198,6 +200,25 @@ observations, each of which can be read off the committed files:
   advance. The same machinery will judge the improved auditors.
 
 ## Quickstart
+
+### Check the committed results on a laptop (CPU, about a minute)
+
+No GPU, no Java and no model download are needed; only macOS or Linux and
+[uv](https://docs.astral.sh/uv/).
+
+```bash
+git clone https://github.com/Tang-Lab-Rutgers/health-twin-disclosure-audit
+cd health-twin-disclosure-audit
+make check
+```
+
+`make check` installs the locked CPU environment and runs the unit tests. It then re-verifies
+all 60 committed person-setting records from their transcripts (`hta verify-all`). From a fresh
+clone with an empty package cache, this took 64 seconds on an Apple M3 laptop: 29 s to install
+about 700 MB of packages (mostly PyTorch), 33 s of tests and 2 s to verify. To check a single
+person by hand, see [Check a score yourself](#check-a-score-yourself).
+
+### Run the full demo (GPU)
 
 Requirements:
 - Linux with an NVIDIA GPU with at least 40 GB of memory and a CUDA 12.8 driver. The LLM auditor
@@ -234,12 +255,13 @@ Results appear in `results/demo/`. The committed run took 11.7 minutes on one H2
 wall time and GPU are in `timings` and `environment` in
 [`results/expected/run_manifest.json`](results/expected/run_manifest.json).
 
-Without a GPU, `make test` and `make smoke` still run on a CPU in minutes (`EXTRA=cpu`), and
-`hta verify` re-checks any committed score on any machine in seconds. The full demo also runs
+Without a GPU, `make check` (above), `make test` and `make smoke` run on a CPU in minutes
+(`EXTRA=cpu`), and `hta verify` re-checks any committed record on any machine in seconds. The full demo also runs
 on a CPU (`EXTRA=cpu make demo`), but the 7B auditor then needs about 32 GB of RAM and hours.
 
 | Command | What it does |
 |---|---|
+| `make check` | CPU only, about a minute: unit tests and re-verification of every committed record |
 | `make demo` | demo run (`configs/demo.yaml`, GPU), verify, compare with `results/expected/` |
 | `make reproduce` | full run (`configs/full.yaml`: 300 + 2000 people, 20 turns, GPU) |
 | `make smoke` | tiny end-to-end run on a CPU, a few minutes; a test, not a result |
@@ -429,8 +451,8 @@ config hash written into every report.
   safe against them is not shown to be safe.
 - **Synthetic people.** Synthea's disease modules are simpler and more correlated with age than
   real records. The labels are the most prevalent conditions, chosen by a mechanical rule.
-- **The filter leaks through its own refusals.** It refuses whole answers, so a refusal is itself
-  a signal (see *What this run already shows*).
+- **The filter can leak through its own refusals.** It refuses whole answers, so a refusal can
+  itself be a signal. This run does not measure how much (see *What this run already shows*).
 - **A simplified conversation.** The twin answers each question from the record and the
   question alone, with no chat history. This keeps each turn's measurement clean, but a real
   twin remembers. 73% of answers reached the 120-token limit and were cut off.
@@ -443,26 +465,45 @@ This release is a small first step, but the target is larger. We want a person t
 ask their own twin, at any point in their life, *"how much have you revealed about me, to whom,
 and how do I know?"*, and to get an answer they can check rather than one they must trust.
 
-### Next: the funded project
+### Next: the funded project (9 months)
 
-1. **Auditors whose readings can be trusted.** First, fix the weaknesses found here. This is a
-   pre-registered change, checked on the reference population only and labelled as made after
-   these results:
+The plan follows the application, in three phases.
+
+1. **Months 1–3: auditors whose readings can be trusted.** Fix the weaknesses this run found.
+   This is a pre-registered change, checked on the reference population only and labelled as
+   made after these results:
    - calibrate the LLM auditor against the demographic prior. Before reading anything, it now
      gives attributes people have a near-zero probability;
    - train the lexical auditor on the full 2,000-person reference population, weighted so that
      rare labels are learned. It now flags none of the attributes a full record names;
-   - settle, before the deciding run, how the wrong-person control treats attributes the donor
-     also has, and write it into the config.
+   - add the commercial auditor, the third of the three auditors the rule names;
+   - settle how the wrong-person control treats attributes the donor also has, and write it
+     into the config.
 
-   The improved auditors must pass all three controls before any result is read.
-2. **The deciding experiment.** Run `configs/full.yaml`: 300 people, 20 turns, a 1.7B twin, with
-   and without the filter, and three auditors. The decision rule is the application's and is
-   already in the config. The claim is supported if at least 10% of people have a disclosed
-   attribute within 20 turns, while the same auditor flags fewer than 2% of people on another
-   person's transcript. It is refuted if fewer than 10% do for all three auditors. The result is
-   reported as it comes out, whichever way it goes.
-3. **The strongest adversary we can build, not the one we happen to have.** A lower bound is
+   The auditors must pass all three controls before any result is read.
+2. **Months 4–6: the deciding experiment.** Run `configs/full.yaml`: 300 people, 20 turns, a
+   1.7B twin, with and without the filter, three auditors, across question mixes and twin
+   models. The decision rule is the application's and is already in the config. The claim is
+   supported if at least 10% of people have a disclosed attribute within 20 turns, while the
+   same auditor flags fewer than 2% of people on another person's transcript. It is refuted if
+   fewer than 10% do for all three auditors. No verdict is issued unless all three auditors ran
+   and every control passed. The result is reported as it comes out, whichever way it goes.
+3. **Months 7–9: a lifetime disclosure budget and its cost in usefulness.** Each person's
+   record is a ledger that grows with every released answer, and bits gained add up across
+   releases. The budget works like this:
+   - before release, the twin checks whether a candidate answer would push any attribute over
+     the threshold. If it would, the twin generalizes the answer or declines;
+   - the cost is the rate of changed or declined answers and the drop in helpfulness, scored
+     with a fixed rubric by an open judge model. It is reported as a trade-off curve against the
+     per-answer filter;
+   - the budget is enforced with the open auditors and evaluated with the commercial one, so
+     the defence is not tuned to its own judge.
+
+   The phase ends with the final report.
+
+### Beyond: stronger adversaries, bounds, and verification by the person
+
+4. **The strongest adversary we can build, not the one we happen to have.** A lower bound is
    only as tight as its auditor. The adversaries to add:
    - auditor ensembles;
    - auditors fine-tuned on reference transcripts;
@@ -471,22 +512,16 @@ and how do I know?"*, and to get an answer they can check rather than one they m
      realistic threat, because a third-party app picks the questions.
 
    Each person's disclosure would then be reported as the maximum over all auditors.
-4. **Usefulness, measured on the same answers.** Score helpfulness alongside disclosure, so that
-   each defence's cost is stated per person. This is the cost in usefulness that a privacy claim
-   has to declare.
-
-### Beyond: lifetime, bounds, and verification by the person
-
-5. **From measured gain to a stated bound.** Express each person's disclosure in the terms of
-   quantitative information flow:
+5. **From measured disclosure to a stated bound.** Express each person's disclosure in the terms
+   of quantitative information flow:
    - Bayes vulnerability and pointwise maximal leakage, relative to the recipient's prior;
    - accumulation across releases with a privacy odometer. A twin could then say "this person
      has spent X of their budget with this app" and stop before a threshold.
 
    The empirical audits in this repository become the attack test that any stated bound must
    survive.
-6. **A lifetime, not ten turns.** Synthea simulates whole lives, which allows twins that run over
-   simulated decades:
+6. **A lifetime, not twenty turns.** Synthea simulates whole lives, which allows twins that run
+   over simulated decades:
    - records that change over time;
    - many apps, each with different prior knowledge;
    - recipients that pool their transcripts.
@@ -502,14 +537,13 @@ and how do I know?"*, and to get an answer they can check rather than one they m
      ledger's claims about the twin checkable;
    - published, re-runnable auditors, so that "how much has leaked" is a number anyone can
      recompute, not one a vendor asserts.
-8. **Defences measured by the same instrument.** Each defence would be reported with its cost
-   in usefulness, person by person:
-   - filters that hold a cumulative per-person budget instead of judging each answer alone;
-   - refusal policies that do not depend on the private record, which closes the refusal side
-     channel found here;
+8. **More defences, measured by the same instrument.** Beyond the budget tested in months 7–9,
+   each defence would be reported with its cost in usefulness, person by person:
+   - refusal policies that do not depend on the private record, which would close the refusal
+     side channel described above;
    - paraphrase-aware and differentially private text release.
 9. **An open benchmark.** A public, re-runnable challenge: submit a twin or a filter and get
-   back per-person disclosure curves with a report anyone can verify, re-checked by CI. This
+   back per-person disclosure records with a report anyone can verify, re-checked by CI. This
    would extend to other synthetic twin data. A validation on real records would come later, and
    only with the legal basis and ethics approval it requires.
 

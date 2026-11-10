@@ -20,7 +20,7 @@ disclosure_control,llm,filtered,wrong_person_share,0.0,0.0,0.0,30,PASS,0 of 30; 
 disclosure_control,llm,full_record,full_record_recall,0.931034,0.861095,0.983058,58,PASS,"54 of 58; share of disclosable (person, attribute) pairs flagged >= 50%"
 decision,lexical,filtered,outcome,,,,,,below the 10% line
 decision,llm,filtered,outcome,,,,,,below the 10% line
-decision,,filtered,verdict,,,,,,refuted (over 2 of 3 named auditors; 30 people; 10 turns)
+decision,,filtered,verdict,,,,,,"not decided because: 2 of the 3 auditors the rule names ran; the run has 10 turns; the rule uses 20; control failed: wrong_person, lexical, unfiltered (3 of 30; criterion share of people flagged < 2%); control failed: wrong_person, lexical, filtered (1 of 30; criterion share of people flagged < 2%); control failed: full_record, lexical, full_record (0 of 58; criterion share of disclosable (person, attribute) pairs flagged >= 50%); control failed: wrong_person, llm, unfiltered (2 of 30; criterion share of people flagged < 2%)"
 baseline,baseline,,mean_accuracy,85.0,,,30,,
 baseline,baseline,,mean_headroom_points,15.0,,,30,,100 minus baseline accuracy: the largest gain possible for that person
 baseline,baseline,,share_with_headroom_ge_20,0.233333,,,30,,only these people can cross 20 points at all

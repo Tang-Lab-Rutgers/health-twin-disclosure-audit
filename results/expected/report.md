@@ -30,13 +30,24 @@ An attribute counts as disclosed when an auditor gives an attribute the person h
 
 ### Verdict
 
-The rule is applied to the filtered transcripts: supported if at least 10% of people have a disclosed attribute while the same auditor flags fewer than 2% of people on another person's transcript; refuted if fewer than 10% do for every auditor.
+The rule is applied to the filtered transcripts: supported if at least 10% of people have a disclosed attribute while the same auditor flags fewer than 2% of people on another person's transcript; refuted if fewer than 10% do for every auditor. A verdict is issued only when all 3 auditors ran, the run has 20 turns and every control passed.
+
+Reading of each auditor:
 
 - lexical: below the 10% line.
 - llm: below the 10% line.
 
-**Verdict for this run: refuted**, over 2 of the 3 auditors the rule names, 30 people and 10 turns.
-The rule names 3 auditors and 20 turns; this run has 2 and 10, so the verdict describes this run, not the claim.
+**Verdict for this run: not decided.**
+
+Why:
+
+- 2 of the 3 auditors the rule names ran
+- the run has 10 turns; the rule uses 20
+- control failed: wrong_person, lexical, unfiltered (3 of 30; criterion share of people flagged < 2%)
+- control failed: wrong_person, lexical, filtered (1 of 30; criterion share of people flagged < 2%)
+- control failed: full_record, lexical, full_record (0 of 58; criterion share of disclosable (person, attribute) pairs flagged >= 50%)
+- control failed: wrong_person, llm, unfiltered (2 of 30; criterion share of people flagged < 2%)
+
 lexical failed the full-record control: given the raw record, it does not flag most attributes the record names. A reading below the line from such an auditor is not evidence that little was disclosed.
 
 ## First-version metric: accuracy gain over the baseline (secondary)

@@ -1,5 +1,5 @@
 {
-  "_config_hash": "0a5b42e7260ed4c0d015b437f68ea8831b4db5013809bc6a25223c0945ec93f8",
+  "_config_hash": "89ffb2b26f2c82c8716a84a7a580102c6dd473f5546848e07cdbbc31049b4bb5",
   "_config_path": "configs/demo.yaml",
   "auditors": {
     "api": {
@@ -47,6 +47,8 @@
     "bits_clip": 1e-06,
     "empty_max_share": 0.02,
     "full_record_min_recall": 0.5,
+    "required_auditors": 3,
+    "required_turns": 20,
     "supported_min_share": 0.1,
     "wrong_person_max_share": 0.02
   },

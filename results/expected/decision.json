@@ -233,5 +233,14 @@
     "wrong_person_max_share": 0.02
   },
   "turns": 10,
-  "verdict": "refuted"
+  "turns_in_rule": 20,
+  "verdict": "not decided",
+  "verdict_reasons": [
+    "2 of the 3 auditors the rule names ran",
+    "the run has 10 turns; the rule uses 20",
+    "control failed: wrong_person, lexical, unfiltered (3 of 30; criterion share of people flagged < 2%)",
+    "control failed: wrong_person, lexical, filtered (1 of 30; criterion share of people flagged < 2%)",
+    "control failed: full_record, lexical, full_record (0 of 58; criterion share of disclosable (person, attribute) pairs flagged >= 50%)",
+    "control failed: wrong_person, llm, unfiltered (2 of 30; criterion share of people flagged < 2%)"
+  ]
 }
